@@ -470,29 +470,43 @@
 	>
 		<defs>
 			<filter id="pencil-texture" x="-5%" y="-5%" width="110%" height="110%">
-				<feTurbulence type="turbulence" baseFrequency="0.04" numOctaves="4" result="noise" />
-				<feDisplacementMap in="SourceGraphic" in2="noise" scale="0.8" />
+				<feTurbulence
+					type="turbulence"
+					baseFrequency="0.04"
+					numOctaves="4"
+					seed="0"
+					result="noise"
+				/>
+				<feDisplacementMap in="SourceGraphic" in2="noise" scale="0.4" />
 			</filter>
 
 			{#each game.players as player (player.id)}
 				<pattern
 					id={stripePatternId(player.id)}
-					width="8"
-					height="8"
+					width="12"
+					height="12"
 					patternUnits="userSpaceOnUse"
 					patternTransform="rotate(45)"
 				>
-					<rect width="8" height="8" fill={player.color} opacity="0.18" />
-					<line x1="0" y1="0" x2="0" y2="8" stroke={player.color} stroke-width="2.5" opacity="0.22">
-						<animateTransform
-							attributeName="transform"
-							type="translate"
-							from="0 0"
-							to="8 0"
-							dur="4s"
-							repeatCount="indefinite"
-						/>
-					</line>
+					<animateTransform
+						attributeName="patternTransform"
+						type="translate"
+						from="0 0"
+						to="12 0"
+						dur="4s"
+						repeatCount="indefinite"
+						additive="sum"
+					/>
+					<rect width="12" height="12" fill={player.color} opacity="0.18" />
+					<line
+						x1="0"
+						y1="0"
+						x2="0"
+						y2="12"
+						stroke={player.color}
+						stroke-width="5"
+						opacity="0.25"
+					/>
 				</pattern>
 			{/each}
 		</defs>
@@ -524,8 +538,6 @@
 		{/each}
 
 		{#each filledSquares as sq (sq.key)}
-			{@const cx = dotX(sq.col) + CELL_SIZE / 2}
-			{@const cy = dotY(sq.row) + CELL_SIZE / 2}
 			<rect
 				x={dotX(sq.col) + 2}
 				y={dotY(sq.row) + 2}
@@ -535,7 +547,6 @@
 				fill="url(#{stripePatternId(sq.playerId)})"
 				class="filled-square"
 				class:newly-captured={isNewCapture.has(sq.key)}
-				style="transform-origin: {cx}px {cy}px"
 			/>
 		{/each}
 
@@ -544,10 +555,10 @@
 			<path
 				d={penPath(line.fromX, line.fromY, line.toX, line.toY)}
 				stroke={line.color}
-				stroke-width={line.diag ? 2 : 2.5}
+				stroke-width={2.5}
 				stroke-linecap="round"
 				fill="none"
-				opacity={line.diag ? 0.6 : 0.85}
+				opacity={line.diag ? 0.7 : 0.85}
 				filter="url(#pencil-texture)"
 				class="drawn-line"
 				class:last-move-line={isLast}
@@ -707,12 +718,12 @@
 
 	.dot-drag-target {
 		filter: drop-shadow(0 0 4px currentColor);
-		animation: glow 0.4s ease-in-out infinite alternate;
+		animation: glow 0.8s ease-in-out infinite alternate;
 		r: 6;
 	}
 
 	.dot-valid-target {
-		animation: glow 0.6s ease-in-out infinite alternate;
+		animation: glow 0.8s ease-in-out infinite alternate;
 		cursor: pointer;
 	}
 
@@ -771,7 +782,7 @@
 
 	@keyframes glow {
 		from {
-			opacity: 0.5;
+			opacity: 0.6;
 		}
 		to {
 			opacity: 1;
@@ -792,13 +803,11 @@
 	@keyframes square-appear {
 		0% {
 			opacity: 0;
-			transform: scale(0);
-			rx: 28;
+			clip-path: inset(50% round 28px);
 		}
 		100% {
 			opacity: 1;
-			transform: scale(1);
-			rx: 3;
+			clip-path: inset(0% round 3px);
 		}
 	}
 
