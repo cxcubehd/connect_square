@@ -10,7 +10,7 @@
 	const BASE_SNAP_RADIUS = 26;
 	const TOUCH_SNAP_RADIUS = 34;
 	const DEAD_ZONE_RADIUS = 8;
-	const DIRECTIONAL_OVERSHOOT_RADIUS = 120;
+	const DIRECTIONAL_OVERSHOOT_RADIUS = 260;
 
 	let isTouchDevice = $state(false);
 	let SNAP_RADIUS = $derived(isTouchDevice ? TOUCH_SNAP_RADIUS : BASE_SNAP_RADIUS);
