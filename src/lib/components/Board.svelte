@@ -559,7 +559,6 @@
 				stroke-linecap="round"
 				fill="none"
 				opacity={line.diag ? 0.7 : 0.85}
-				filter="url(#pencil-texture)"
 				class="drawn-line"
 				class:last-move-line={isLast}
 			/>
@@ -740,7 +739,6 @@
 	}
 
 	.last-move-line {
-		filter: url(#pencil-texture);
 		opacity: 0.95;
 	}
 
