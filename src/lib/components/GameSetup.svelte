@@ -190,38 +190,39 @@
 
 <style>
 	.setup-panel {
+		width: 100%;
 		max-width: 480px;
 		margin: 0 auto;
-		padding: 2rem;
+		padding: 1.25rem 1rem;
 		background: var(--panel-bg);
-		border-radius: 16px;
+		border-radius: 12px;
 		border: 1px solid var(--border-color);
 	}
 
 	.game-title {
-		font-size: 2rem;
+		font-size: 1.75rem;
 		font-weight: 800;
 		text-align: center;
 		color: var(--text-primary);
-		margin: 0 0 0.25rem;
+		margin: 0 0 0.2rem;
 		letter-spacing: -0.02em;
 	}
 
 	.game-subtitle {
 		text-align: center;
 		color: var(--text-muted);
-		margin: 0 0 1.5rem;
-		font-size: 0.9rem;
+		margin: 0 0 1.25rem;
+		font-size: 0.85rem;
 		font-style: italic;
 	}
 
 	.quick-start h3 {
-		font-size: 0.85rem;
+		font-size: 0.8rem;
 		font-weight: 600;
 		color: var(--text-muted);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		margin: 0 0 0.75rem;
+		margin: 0 0 0.6rem;
 	}
 
 	.quick-buttons {
@@ -234,23 +235,25 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.25rem;
+		gap: 0.3rem;
 		padding: 0.75rem 0.5rem;
 		border: 1px solid var(--border-color);
 		border-radius: 10px;
 		background: var(--surface-bg);
 		cursor: pointer;
 		transition: all 0.15s ease;
+		-webkit-tap-highlight-color: transparent;
+		min-height: 44px;
 	}
 
 	.quick-btn:hover {
 		border-color: var(--accent-color);
 		background: var(--hover-bg);
-		transform: translateY(-1px);
 	}
 
 	.quick-btn:active {
-		transform: translateY(0);
+		transform: scale(0.97);
+		background: var(--hover-bg);
 	}
 
 	.quick-icon {
@@ -261,13 +264,14 @@
 		font-size: 0.7rem;
 		font-weight: 500;
 		color: var(--text-muted);
+		text-align: center;
 	}
 
 	.divider {
 		display: flex;
 		align-items: center;
 		gap: 1rem;
-		margin: 1.5rem 0;
+		margin: 1.25rem 0;
 		color: var(--text-muted);
 		font-size: 0.8rem;
 	}
@@ -281,7 +285,7 @@
 	}
 
 	.config-section {
-		margin-bottom: 1.25rem;
+		margin-bottom: 1rem;
 	}
 
 	.config-label {
@@ -295,6 +299,7 @@
 
 	.board-slider {
 		width: 100%;
+		height: 32px;
 		accent-color: var(--accent-color);
 	}
 
@@ -308,7 +313,7 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 0.75rem;
+		margin-bottom: 0.6rem;
 	}
 
 	.players-header h3 {
@@ -320,13 +325,15 @@
 
 	.add-player-btn {
 		font-size: 0.75rem;
-		padding: 0.25rem 0.75rem;
+		padding: 0.35rem 0.75rem;
 		border-radius: 6px;
 		border: 1px dashed var(--border-color);
 		background: transparent;
 		color: var(--text-muted);
 		cursor: pointer;
 		transition: all 0.15s ease;
+		-webkit-tap-highlight-color: transparent;
+		min-height: 36px;
 	}
 
 	.add-player-btn:hover {
@@ -338,7 +345,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		padding: 0.75rem;
+		padding: 0.65rem;
 		border: 1px solid var(--border-color);
 		border-radius: 10px;
 		margin-bottom: 0.5rem;
@@ -352,12 +359,13 @@
 
 	.player-name-input {
 		flex: 1;
-		padding: 0.4rem 0.6rem;
+		min-width: 0;
+		padding: 0.5rem 0.6rem;
 		border: 1px solid var(--border-color);
 		border-radius: 6px;
 		background: var(--input-bg);
 		color: var(--text-primary);
-		font-size: 0.85rem;
+		font-size: 16px;
 	}
 
 	.player-name-input:focus {
@@ -366,23 +374,25 @@
 	}
 
 	.color-select {
-		width: 100px;
-		padding: 0.4rem;
+		width: 90px;
+		padding: 0.5rem 0.4rem;
 		border: none;
 		border-radius: 6px;
 		font-size: 0.75rem;
 		font-weight: 600;
 		cursor: pointer;
+		min-height: 44px;
 	}
 
 	.player-config-type {
 		display: flex;
-		gap: 0.5rem;
+		gap: 0.4rem;
 		align-items: center;
+		flex-wrap: wrap;
 	}
 
 	.type-btn {
-		padding: 0.3rem 0.6rem;
+		padding: 0.4rem 0.65rem;
 		border: 1px solid var(--border-color);
 		border-radius: 6px;
 		background: transparent;
@@ -391,6 +401,8 @@
 		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.15s ease;
+		-webkit-tap-highlight-color: transparent;
+		min-height: 36px;
 	}
 
 	.type-btn.active {
@@ -401,28 +413,31 @@
 
 	.bot-select {
 		flex: 1;
-		padding: 0.3rem;
+		min-width: 0;
+		padding: 0.4rem;
 		border: 1px solid var(--border-color);
 		border-radius: 6px;
 		background: var(--input-bg);
 		color: var(--text-primary);
 		font-size: 0.75rem;
+		min-height: 36px;
 	}
 
 	.remove-btn {
-		width: 28px;
-		height: 28px;
+		width: 36px;
+		height: 36px;
 		border-radius: 6px;
 		border: 1px solid var(--border-color);
 		background: transparent;
 		color: var(--text-muted);
-		font-size: 1rem;
+		font-size: 1.1rem;
 		cursor: pointer;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		transition: all 0.15s ease;
 		flex-shrink: 0;
+		-webkit-tap-highlight-color: transparent;
 	}
 
 	.remove-btn:hover {
@@ -443,14 +458,47 @@
 		cursor: pointer;
 		transition: all 0.15s ease;
 		letter-spacing: 0.02em;
+		-webkit-tap-highlight-color: transparent;
+		min-height: 48px;
 	}
 
 	.start-btn:hover {
 		filter: brightness(1.1);
-		transform: translateY(-1px);
 	}
 
 	.start-btn:active {
-		transform: translateY(0);
+		transform: scale(0.98);
+	}
+
+	@media (min-width: 640px) {
+		.setup-panel {
+			padding: 2rem;
+			border-radius: 16px;
+		}
+
+		.game-title {
+			font-size: 2rem;
+		}
+
+		.game-subtitle {
+			margin-bottom: 1.5rem;
+			font-size: 0.9rem;
+		}
+
+		.quick-btn:hover {
+			transform: translateY(-1px);
+		}
+
+		.quick-btn:active {
+			transform: translateY(0);
+		}
+
+		.start-btn:hover {
+			transform: translateY(-1px);
+		}
+
+		.start-btn:active {
+			transform: translateY(0);
+		}
 	}
 </style>

@@ -7,8 +7,12 @@
 
 	const PADDING = 40;
 	const CELL_SIZE = 60;
-	const SNAP_RADIUS = 22;
-	const DEAD_ZONE_RADIUS = 10;
+	const BASE_SNAP_RADIUS = 26;
+	const TOUCH_SNAP_RADIUS = 34;
+	const DEAD_ZONE_RADIUS = 8;
+
+	let isTouchDevice = $state(false);
+	let SNAP_RADIUS = $derived(isTouchDevice ? TOUCH_SNAP_RADIUS : BASE_SNAP_RADIUS);
 
 	let svgWidth = $derived(game.boardSize * CELL_SIZE + PADDING * 2);
 	let svgHeight = $derived(game.boardSize * CELL_SIZE + PADDING * 2);
@@ -19,6 +23,24 @@
 	let dragCursorSvg: { x: number; y: number } | null = $state(null);
 	let dragMoved = $state(false);
 	let hoveredPoint: Point | null = $state(null);
+	let turnHintActive = $state(false);
+
+	const TURN_HINT_DURATION_MS = 600;
+
+	let isHumanTurn = $derived(
+		game.phase === 'playing' && game.currentPlayer?.type === 'human' && !game.editMode
+	);
+
+	$effect(() => {
+		if (!isHumanTurn) return;
+
+		turnHintActive = true;
+		const timeout = setTimeout(() => {
+			turnHintActive = false;
+		}, TURN_HINT_DURATION_MS);
+
+		return () => clearTimeout(timeout);
+	});
 
 	function dotX(col: number): number {
 		return PADDING + col * CELL_SIZE;
@@ -175,6 +197,8 @@
 	});
 
 	function handlePointerDown(e: PointerEvent) {
+		if (e.pointerType === 'touch') isTouchDevice = true;
+
 		if (game.phase !== 'playing' || game.editMode) return;
 		const player = game.currentPlayer;
 		if (!player || player.type !== 'human') return;
@@ -363,6 +387,10 @@
 			classes.push('dot-can-select');
 		}
 
+		if (turnHintActive && validOrigins.has(pk)) {
+			classes.push('dot-turn-hint');
+		}
+
 		if (hoveredPoint?.row === row && hoveredPoint?.col === col && !isDragging) {
 			classes.push('dot-hovered');
 		}
@@ -410,18 +438,20 @@
 
 	function dotRadius(row: number, col: number): number {
 		const pk = pointKey({ row, col });
-		if (game.selectedPoint?.row === row && game.selectedPoint?.col === col) return 6;
-		if (dragOrigin?.row === row && dragOrigin?.col === col) return 6;
-		if (isDragging && dragTarget?.row === row && dragTarget?.col === col) return 6;
-		if (validDestinations.has(pk) && (game.selectedPoint || isDragging)) return 5;
-		if (validOrigins.has(pk)) return 4.5;
-		if (isLastMoveDot(row, col)) return 4.5;
+		const touchBonus = isTouchDevice ? 1.5 : 0;
+
+		if (game.selectedPoint?.row === row && game.selectedPoint?.col === col) return 6 + touchBonus;
+		if (dragOrigin?.row === row && dragOrigin?.col === col) return 6 + touchBonus;
+		if (isDragging && dragTarget?.row === row && dragTarget?.col === col) return 6 + touchBonus;
+		if (validDestinations.has(pk) && (game.selectedPoint || isDragging)) return 5 + touchBonus;
+		if (validOrigins.has(pk)) return 4.5 + touchBonus;
+		if (isLastMoveDot(row, col)) return 4.5 + touchBonus;
 
 		for (const [, points] of game.markedPoints) {
-			if (points.has(pk)) return 4;
+			if (points.has(pk)) return 4 + touchBonus;
 		}
 
-		return 3;
+		return 3 + touchBonus;
 	}
 
 	function dotZOrder(row: number, col: number): number {
@@ -659,6 +689,7 @@
 		width: 100%;
 		max-width: 700px;
 		margin: 0 auto;
+		padding: 0;
 	}
 
 	.board-svg {
@@ -667,6 +698,8 @@
 		user-select: none;
 		-webkit-user-select: none;
 		touch-action: none;
+		-webkit-touch-callout: none;
+		-webkit-tap-highlight-color: transparent;
 	}
 
 	.board-bg {
@@ -695,9 +728,11 @@
 		border: 0;
 	}
 
-	.dot:hover {
-		r: 5.5;
-		opacity: 0.9;
+	@media (hover: hover) and (pointer: fine) {
+		.dot:hover {
+			r: 5.5;
+			opacity: 0.9;
+		}
 	}
 
 	.dot-hovered {
@@ -728,6 +763,10 @@
 
 	.dot-can-select {
 		cursor: pointer;
+	}
+
+	.dot-turn-hint {
+		animation: turn-hint 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 	}
 
 	.dot-last-move {
@@ -838,6 +877,18 @@
 		}
 		100% {
 			stroke-dashoffset: -8;
+		}
+	}
+
+	@keyframes turn-hint {
+		0% {
+			r: 4.5;
+		}
+		50% {
+			r: 5;
+		}
+		100% {
+			r: 4.5;
 		}
 	}
 </style>

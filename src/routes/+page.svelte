@@ -59,23 +59,26 @@
 
 <style>
 	.app {
-		min-height: 100vh;
+		min-height: 100dvh;
 		display: flex;
 		flex-direction: column;
+		overflow-x: hidden;
 	}
 
 	.app-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 0.75rem 1.5rem;
+		padding: 0.5rem 1rem;
 		border-bottom: 1px solid var(--border-color);
 		background: var(--panel-bg);
+		flex-shrink: 0;
+		min-height: 48px;
 	}
 
 	.header-title {
 		font-family: var(--font-display);
-		font-size: 1.5rem;
+		font-size: 1.25rem;
 		font-weight: 700;
 		margin: 0;
 		color: var(--text-primary);
@@ -85,46 +88,54 @@
 	.header-right {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
+		gap: 0.5rem;
 	}
 
 	.app-main {
 		flex: 1;
 		display: flex;
 		justify-content: center;
-		padding: 1rem;
+		padding: 0.5rem;
 	}
 
 	.setup-view {
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		justify-content: center;
 		width: 100%;
-		padding: 2rem 1rem;
+		padding: 0.5rem 0;
 	}
 
 	.game-view {
 		display: flex;
-		gap: 1.5rem;
-		align-items: flex-start;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
 		width: 100%;
 		max-width: 1200px;
-		justify-content: center;
 	}
 
 	.sidebar {
-		flex-shrink: 0;
-		position: sticky;
-		top: 1rem;
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.sidebar-left {
+		order: 0;
 	}
 
 	.board-area {
-		flex: 1;
-		max-width: 700px;
+		order: 1;
+		width: 100%;
+		max-width: 100%;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 0.5rem;
+	}
+
+	.sidebar-right {
+		order: 2;
 	}
 
 	.edit-banner {
@@ -147,27 +158,71 @@
 		}
 	}
 
-	@media (max-width: 900px) {
-		.game-view {
-			flex-direction: column;
+	@media (min-width: 640px) {
+		.app-header {
+			padding: 0.5rem 1.25rem;
+		}
+
+		.app-main {
+			padding: 0.75rem;
+		}
+
+		.setup-view {
+			padding: 1rem 0.5rem;
 			align-items: center;
 		}
 
-		.sidebar {
-			position: static;
-			width: 100%;
-			max-width: 700px;
+		.game-view {
+			gap: 1rem;
 		}
 
-		.sidebar-right {
-			order: 3;
+		.board-area {
+			max-width: 560px;
+		}
+	}
+
+	@media (min-width: 900px) {
+		.app-header {
+			padding: 0.75rem 1.5rem;
+		}
+
+		.header-title {
+			font-size: 1.5rem;
+		}
+
+		.app-main {
+			padding: 1rem;
+		}
+
+		.setup-view {
+			padding: 2rem 1rem;
+		}
+
+		.game-view {
+			flex-direction: row;
+			align-items: flex-start;
+			gap: 1.5rem;
+		}
+
+		.sidebar {
+			flex-shrink: 0;
+			position: sticky;
+			top: 1rem;
+			width: auto;
+			max-width: none;
+		}
+
+		.sidebar-left {
+			order: 0;
 		}
 
 		.board-area {
 			order: 1;
+			flex: 1;
+			max-width: 700px;
 		}
 
-		.sidebar-left {
+		.sidebar-right {
 			order: 2;
 		}
 	}

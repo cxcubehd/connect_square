@@ -5,6 +5,8 @@
 	let { game }: { game: GameState } = $props();
 
 	const bots = getAvailableBots();
+
+	let showBotAssign = $state(false);
 </script>
 
 <div class="controls" role="region" aria-label="Game controls">
@@ -52,28 +54,6 @@
 	</div>
 
 	{#if game.phase === 'playing'}
-		<div class="bot-assign">
-			<h4>Assign Bots</h4>
-			{#each game.players as player, i (player.id)}
-				<div class="bot-row" style:--player-color={player.color}>
-					<span class="bot-player-name">{player.name}</span>
-					<select
-						class="bot-assign-select"
-						value={player.botStrategyId ?? ''}
-						onchange={(e) => {
-							const val = (e.target as HTMLSelectElement).value;
-							game.assignBot(i, val || null);
-						}}
-					>
-						<option value="">Human</option>
-						{#each bots as bot}
-							<option value={bot.id}>{bot.name}</option>
-						{/each}
-					</select>
-				</div>
-			{/each}
-		</div>
-
 		<div class="game-info">
 			<div class="info-row">
 				<span>Squares</span>
@@ -90,6 +70,53 @@
 				></div>
 			</div>
 		</div>
+
+		<div class="bot-assign">
+			<button
+				class="bot-assign-toggle"
+				onclick={() => (showBotAssign = !showBotAssign)}
+				aria-expanded={showBotAssign}
+			>
+				<h4>Assign Bots</h4>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="14"
+					height="14"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="chevron"
+					class:expanded={showBotAssign}
+				>
+					<path d="m6 9 6 6 6-6" />
+				</svg>
+			</button>
+			{#if showBotAssign}
+				<div class="bot-assign-list">
+					{#each game.players as player, i (player.id)}
+						<div class="bot-row" style:--player-color={player.color}>
+							<span class="bot-player-name">{player.name}</span>
+							<select
+								class="bot-assign-select"
+								value={player.botStrategyId ?? ''}
+								onchange={(e) => {
+									const val = (e.target as HTMLSelectElement).value;
+									game.assignBot(i, val || null);
+								}}
+							>
+								<option value="">Human</option>
+								{#each bots as bot}
+									<option value={bot.id}>{bot.name}</option>
+								{/each}
+							</select>
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	{/if}
 </div>
 
@@ -97,38 +124,45 @@
 	.controls {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
-		padding: 1rem;
+		gap: 0.6rem;
+		padding: 0.6rem;
 		background: var(--panel-bg);
-		border-radius: 12px;
+		border-radius: 10px;
 		border: 1px solid var(--border-color);
-		min-width: 200px;
+		width: 100%;
 	}
 
 	.control-group {
 		display: flex;
-		flex-direction: column;
 		gap: 0.5rem;
 	}
 
 	.control-btn {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		justify-content: center;
+		gap: 0.4rem;
+		flex: 1;
 		padding: 0.6rem 0.75rem;
 		border: 1px solid var(--border-color);
 		border-radius: 8px;
 		background: var(--surface-bg);
 		color: var(--text-primary);
-		font-size: 0.85rem;
+		font-size: 0.8rem;
 		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.15s ease;
+		-webkit-tap-highlight-color: transparent;
+		min-height: 44px;
 	}
 
 	.control-btn:hover {
 		background: var(--hover-bg);
 		border-color: var(--accent-color);
+	}
+
+	.control-btn:active {
+		transform: scale(0.97);
 	}
 
 	.control-btn.active {
@@ -137,49 +171,12 @@
 		color: white;
 	}
 
-	.bot-assign {
-		border-top: 1px solid var(--border-color);
-		padding-top: 0.75rem;
-	}
-
-	.bot-assign h4 {
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--text-muted);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		margin: 0 0 0.5rem;
-	}
-
-	.bot-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem;
-		margin-bottom: 0.4rem;
-	}
-
-	.bot-player-name {
-		font-size: 0.8rem;
-		color: var(--player-color);
-		font-weight: 500;
-	}
-
-	.bot-assign-select {
-		padding: 0.25rem 0.4rem;
-		border: 1px solid var(--border-color);
-		border-radius: 6px;
-		background: var(--input-bg);
-		color: var(--text-primary);
-		font-size: 0.75rem;
-	}
-
 	.game-info {
-		border-top: 1px solid var(--border-color);
-		padding-top: 0.75rem;
 		display: flex;
 		flex-direction: column;
-		gap: 0.35rem;
+		gap: 0.3rem;
+		padding-top: 0.5rem;
+		border-top: 1px solid var(--border-color);
 	}
 
 	.info-row {
@@ -200,7 +197,7 @@
 		border-radius: 2px;
 		background: var(--border-color);
 		overflow: hidden;
-		margin-top: 0.25rem;
+		margin-top: 0.2rem;
 	}
 
 	.progress-fill {
@@ -208,5 +205,97 @@
 		border-radius: 2px;
 		background: var(--accent-color);
 		transition: width 0.3s ease;
+	}
+
+	.bot-assign {
+		border-top: 1px solid var(--border-color);
+		padding-top: 0.5rem;
+	}
+
+	.bot-assign-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		padding: 0.3rem 0;
+		border: none;
+		background: transparent;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	.bot-assign-toggle h4 {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin: 0;
+	}
+
+	.chevron {
+		color: var(--text-muted);
+		transition: transform 0.2s ease;
+	}
+
+	.chevron.expanded {
+		transform: rotate(180deg);
+	}
+
+	.bot-assign-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+		margin-top: 0.4rem;
+	}
+
+	.bot-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+
+	.bot-player-name {
+		font-size: 0.8rem;
+		color: var(--player-color);
+		font-weight: 500;
+	}
+
+	.bot-assign-select {
+		padding: 0.35rem 0.4rem;
+		border: 1px solid var(--border-color);
+		border-radius: 6px;
+		background: var(--input-bg);
+		color: var(--text-primary);
+		font-size: 0.75rem;
+		min-height: 36px;
+	}
+
+	@media (min-width: 900px) {
+		.controls {
+			padding: 1rem;
+			border-radius: 12px;
+			min-width: 200px;
+			width: auto;
+		}
+
+		.control-group {
+			flex-direction: column;
+		}
+
+		.control-btn {
+			justify-content: flex-start;
+			font-size: 0.85rem;
+		}
+
+		.game-info {
+			padding-top: 0.75rem;
+			gap: 0.35rem;
+		}
+
+		.bot-assign {
+			padding-top: 0.75rem;
+		}
 	}
 </style>
