@@ -16,6 +16,7 @@
 		"test": "npm run test:e2e"
 	},
 	"devDependencies": {
+		"@lucide/svelte": "^0.563.1",
 		"@playwright/test": "^1.58.1",
 		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/adapter-static": "^3.0.10",
@@ -35,7 +36,6 @@
 		"vite-plugin-devtools-json": "^1.0.0"
 	},
 	"dependencies": {
-		"@lucide/svelte": "^0.563.1",
 		"mode-watcher": "^1.1.0"
 	}
 }
