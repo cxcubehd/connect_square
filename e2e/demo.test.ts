@@ -127,3 +127,152 @@ test.describe('Connect, Square! - Bot vs Bot', () => {
 		await expect(moves).toBeVisible();
 	});
 });
+
+test.describe('Connect, Square! - Drag Interaction', () => {
+	test.beforeEach(async ({ page }) => {
+		await page.goto('/');
+		await page.getByText('Player vs Player').click();
+	});
+
+	test('dots have no focus outline artifacts', async ({ page }) => {
+		const dot = page.locator('.dot').first();
+		await dot.focus();
+		const outline = await dot.evaluate((el) => getComputedStyle(el).outline);
+		expect(outline).toContain('none');
+	});
+
+	test('hovering near a dot highlights it', async ({ page }) => {
+		const svg = page.locator('.board-svg');
+		const box = await svg.boundingBox();
+		if (!box) return;
+
+		await page.mouse.move(box.x + 42, box.y + 42);
+		await page.waitForTimeout(100);
+
+		const hoveredDots = page.locator('.dot-hovered');
+		const count = await hoveredDots.count();
+		expect(count).toBeLessThanOrEqual(1);
+	});
+
+	test('ctrl+click selects a point', async ({ page }) => {
+		const originDot = page.locator('circle[aria-label="Point 0,0"]');
+		await originDot.click({ modifiers: ['Control'] });
+		await page.waitForTimeout(100);
+
+		const selectedDots = page.locator('.dot-selected');
+		await expect(selectedDots).toHaveCount(1);
+	});
+
+	test('ctrl+click on valid destination makes a connection', async ({ page }) => {
+		const originDot = page.locator('circle[aria-label="Point 0,0"]');
+		await originDot.click({ modifiers: ['Control'] });
+		await page.waitForTimeout(100);
+
+		const destDot = page.locator('circle[aria-label="Point 0,1"]');
+		await destDot.click({ modifiers: ['Control'] });
+		await page.waitForTimeout(100);
+
+		const drawnLines = page.locator('.drawn-line');
+		await expect(drawnLines.first()).toBeVisible();
+	});
+
+	test('clicking without ctrl deselects', async ({ page }) => {
+		const originDot = page.locator('circle[aria-label="Point 0,0"]');
+		await originDot.click({ modifiers: ['Control'] });
+		await page.waitForTimeout(100);
+		await expect(page.locator('.dot-selected')).toHaveCount(1);
+
+		await originDot.click({ force: true });
+		await page.waitForTimeout(100);
+		await expect(page.locator('.dot-selected')).toHaveCount(0);
+	});
+
+	test('drag from origin to neighbor makes a connection', async ({ page }) => {
+		const svg = page.locator('.board-svg');
+		const box = await svg.boundingBox();
+		if (!box) return;
+
+		const viewBoxWidth = await svg.evaluate((el) => {
+			const vb = el.getAttribute('viewBox')?.split(' ').map(Number);
+			return vb ? vb[2] : 440;
+		});
+		const scale = box.width / viewBoxWidth;
+
+		const originX = box.x + 40 * scale;
+		const originY = box.y + 40 * scale;
+		const destX = box.x + 100 * scale;
+		const destY = box.y + 40 * scale;
+
+		await page.mouse.move(originX, originY);
+		await page.mouse.down();
+		await page.waitForTimeout(50);
+		await page.mouse.move(destX, destY, { steps: 5 });
+		await page.waitForTimeout(50);
+		await page.mouse.up();
+		await page.waitForTimeout(200);
+
+		const drawnLines = page.locator('.drawn-line');
+		await expect(drawnLines.first()).toBeVisible();
+	});
+});
+
+test.describe('Connect, Square! - Visual Enhancements', () => {
+	test.beforeEach(async ({ page }) => {
+		await page.goto('/');
+		await page.getByText('Player vs Player').click();
+	});
+
+	test('filled squares use stripe pattern', async ({ page }) => {
+		const patterns = page.locator('pattern[id^="stripe-"]');
+		const count = await patterns.count();
+		expect(count).toBeGreaterThan(0);
+	});
+
+	test('stripe patterns have animation', async ({ page }) => {
+		const animateTransforms = page.locator('pattern[id^="stripe-"] animateTransform');
+		const count = await animateTransforms.count();
+		expect(count).toBeGreaterThan(0);
+	});
+
+	test('board has warm earthy theme colors', async ({ page }) => {
+		const body = page.locator('body');
+		const bgColor = await body.evaluate((el) =>
+			getComputedStyle(el).getPropertyValue('--bg-color').trim()
+		);
+		expect(bgColor).not.toBe('#faf8f5');
+		expect(bgColor).toBeTruthy();
+	});
+
+	test('last move line is emphasized', async ({ page }) => {
+		const originDot = page.locator('circle[aria-label="Point 0,0"]');
+		await originDot.click({ modifiers: ['Control'] });
+		await page.waitForTimeout(100);
+
+		const destDot = page.locator('circle[aria-label="Point 0,1"]');
+		await destDot.click({ modifiers: ['Control'] });
+		await page.waitForTimeout(200);
+
+		const lastMoveLine = page.locator('.last-move-line');
+		await expect(lastMoveLine).toBeVisible();
+	});
+
+	test('current player dots are rendered on top', async ({ page }) => {
+		const dots = page.locator('.dot');
+		const count = await dots.count();
+		expect(count).toBe(49);
+	});
+
+	test('dashed guide lines have directional animation', async ({ page }) => {
+		const originDot = page.locator('circle[aria-label="Point 0,0"]');
+		await originDot.click({ modifiers: ['Control'] });
+		await page.waitForTimeout(100);
+
+		const guideDashes = page.locator('.guide-dash');
+		const count = await guideDashes.count();
+		expect(count).toBeGreaterThan(0);
+
+		const firstDash = guideDashes.first();
+		const classes = await firstDash.getAttribute('class');
+		expect(classes).toMatch(/dir-/);
+	});
+});

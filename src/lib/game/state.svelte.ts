@@ -25,6 +25,9 @@ export class GameState {
 	lastCaptures: string[] = $state([]);
 	winner: Player | null = $state(null);
 	isBotThinking = $state(false);
+	lastMoveFrom: Point | null = $state(null);
+	lastMoveTo: Point | null = $state(null);
+	lastMoveLineKey: string | null = $state(null);
 	private botTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	get currentPlayer(): Player | undefined {
@@ -73,6 +76,9 @@ export class GameState {
 		this.lastCaptures = [];
 		this.winner = null;
 		this.isBotThinking = false;
+		this.lastMoveFrom = null;
+		this.lastMoveTo = null;
+		this.lastMoveLineKey = null;
 
 		if (this.botTimeout) {
 			clearTimeout(this.botTimeout);
@@ -154,12 +160,15 @@ export class GameState {
 		}
 	}
 
-	private executeMove(from: Point, to: Point) {
+	executeMove(from: Point, to: Point) {
 		const player = this.currentPlayer;
 		if (!player) return;
 
 		const key = lineKey(from, to);
 		this.lines.set(key, player.id);
+		this.lastMoveFrom = from;
+		this.lastMoveTo = to;
+		this.lastMoveLineKey = key;
 
 		let playerPoints = this.markedPoints.get(player.id);
 		if (!playerPoints) {
@@ -423,5 +432,8 @@ export class GameState {
 		this.lastCaptures = [];
 		this.winner = null;
 		this.isBotThinking = false;
+		this.lastMoveFrom = null;
+		this.lastMoveTo = null;
+		this.lastMoveLineKey = null;
 	}
 }
