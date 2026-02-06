@@ -1,6 +1,8 @@
+<img src="logo.jpg" alt="Description" height="50px" /> 
+
 # Connect, Square!
 
-![Connect, Square! Logo](logo.jpg)
+![Connect, Square! Logo](image.png)  
 
 **Connect, Square!** is a modern, strategic game of territory and connections built with Svelte 5. Compete against friends or AI to capture the most territory on a grid by drawing lines and completing squares.
 
