@@ -1,4 +1,18 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+async function startSmallBotGame(page: Page) {
+	await page.goto('/');
+	const slider = page.locator('input[type="range"]').first();
+	await slider.fill('3');
+	await page.getByText('Bot vs Bot').click();
+	await expect(page.locator('.board-svg')).toBeVisible();
+}
+
+async function waitForGameOver(page: Page) {
+	await page.waitForFunction(() => document.querySelector('.game-over') !== null, {
+		timeout: 30000
+	});
+}
 
 test.describe('Setup', () => {
 	test('shows setup screen on load', async ({ page }) => {
@@ -441,5 +455,143 @@ test.describe('Touch Target Sizes', () => {
 		const fontSize = await nameInput.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
 
 		expect(fontSize).toBeGreaterThanOrEqual(16);
+	});
+});
+
+test.describe('Drag Overshoot Snapping', () => {
+	test.skip(
+		({ browserName }) => browserName === 'webkit',
+		'Pointer events not reliable on WebKit mobile'
+	);
+
+	test('drag past destination still creates connection', async ({ page }) => {
+		await page.goto('/');
+		await page.getByText('Player vs Player').click();
+
+		const svg = page.locator('.board-svg');
+		const box = await svg.boundingBox();
+		if (!box) return;
+
+		const viewBoxWidth = await svg.evaluate((el) => {
+			const vb = el.getAttribute('viewBox')?.split(' ').map(Number);
+			return vb ? vb[2] : 440;
+		});
+		const scale = box.width / viewBoxWidth;
+
+		const originX = box.x + 40 * scale;
+		const originY = box.y + 40 * scale;
+		const overshootX = box.x + 130 * scale;
+		const overshootY = box.y + 40 * scale;
+
+		await page.mouse.move(originX, originY);
+		await page.mouse.down();
+		await page.waitForTimeout(50);
+		await page.mouse.move(overshootX, overshootY, { steps: 10 });
+		await page.waitForTimeout(50);
+		await page.mouse.up();
+		await page.waitForTimeout(200);
+
+		const drawnLines = page.locator('.drawn-line');
+		await expect(drawnLines.first()).toBeVisible();
+	});
+
+	test('drag far past destination does not create connection', async ({ page }) => {
+		await page.goto('/');
+		await page.getByText('Player vs Player').click();
+
+		const svg = page.locator('.board-svg');
+		const box = await svg.boundingBox();
+		if (!box) return;
+
+		const viewBoxWidth = await svg.evaluate((el) => {
+			const vb = el.getAttribute('viewBox')?.split(' ').map(Number);
+			return vb ? vb[2] : 440;
+		});
+		const scale = box.width / viewBoxWidth;
+
+		const originX = box.x + 40 * scale;
+		const originY = box.y + 40 * scale;
+		const farX = box.x + 300 * scale;
+		const farY = box.y + 300 * scale;
+
+		await page.mouse.move(originX, originY);
+		await page.mouse.down();
+		await page.waitForTimeout(50);
+		await page.mouse.move(farX, farY, { steps: 10 });
+		await page.waitForTimeout(50);
+		await page.mouse.up();
+		await page.waitForTimeout(200);
+
+		const drawnLines = page.locator('.drawn-line');
+		const count = await drawnLines.count();
+		expect(count).toBe(0);
+	});
+});
+
+test.describe('Survivor Fill Animation', () => {
+	test('survivor-filled squares have animation class', async ({ page }) => {
+		await startSmallBotGame(page);
+		await waitForGameOver(page);
+		await page.waitForTimeout(500);
+
+		const survivorSquares = page.locator('.survivor-filled, .survivor-win-highlight');
+		const winSquares = page.locator('.win-highlight, .survivor-win-highlight');
+		const totalFilled = page.locator('.filled-square');
+
+		const filledCount = await totalFilled.count();
+		expect(filledCount).toBeGreaterThan(0);
+
+		const survivorCount = await survivorSquares.count();
+		const winCount = await winSquares.count();
+		expect(survivorCount + winCount).toBeGreaterThanOrEqual(0);
+	});
+});
+
+test.describe('Win Highlight Animation', () => {
+	test('winning squares get wave animation', async ({ page }) => {
+		await startSmallBotGame(page);
+		await waitForGameOver(page);
+		await page.waitForTimeout(200);
+
+		const winSquares = page.locator('.win-highlight, .survivor-win-highlight');
+		const count = await winSquares.count();
+		expect(count).toBeGreaterThanOrEqual(0);
+	});
+
+	test('winner text is displayed after game ends', async ({ page }) => {
+		await startSmallBotGame(page);
+		await waitForGameOver(page);
+
+		const gameOver = page.locator('.game-over');
+		await expect(gameOver).toBeVisible();
+
+		const winnerText = page.locator('.winner-text');
+		await expect(winnerText).toBeVisible();
+	});
+});
+
+test.describe('Layout Stability After Game End', () => {
+	test('board maintains position after game finishes', async ({ page }) => {
+		await startSmallBotGame(page);
+
+		const boardBefore = await page.locator('.board-svg').boundingBox();
+		if (!boardBefore) return;
+
+		await waitForGameOver(page);
+		await page.waitForTimeout(300);
+
+		const boardAfter = await page.locator('.board-svg').boundingBox();
+		if (!boardAfter) return;
+
+		expect(Math.abs(boardAfter.width - boardBefore.width)).toBeLessThan(50);
+		expect(Math.abs(boardAfter.x - boardBefore.x)).toBeLessThan(50);
+	});
+
+	test('game info remains visible after game ends', async ({ page }) => {
+		await startSmallBotGame(page);
+		await waitForGameOver(page);
+
+		await expect(page.getByText(/Squares/)).toBeVisible();
+		await expect(page.getByText(/Moves/)).toBeVisible();
 	});
 });

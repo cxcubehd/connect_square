@@ -29,27 +29,27 @@
 		{/each}
 	</div>
 
-	{#if game.phase === 'playing' && game.currentPlayer}
-		<div class="turn-indicator" style:--player-color={game.currentPlayer.color}>
-			{#if game.isBotThinking}
-				<span class="thinking-text">Thinking...</span>
-			{:else if game.currentPlayer.type === 'human'}
-				<span>{game.currentPlayer.name}'s turn</span>
-			{/if}
-		</div>
-	{/if}
-
-	{#if game.phase === 'finished'}
-		<div class="game-over">
-			{#if game.winner}
-				<span class="winner-text" style:color={game.winner.color}>
-					{game.winner.name} wins!
-				</span>
-			{:else}
-				<span class="winner-text">It's a tie!</span>
-			{/if}
-		</div>
-	{/if}
+	<div class="status-section">
+		{#if game.phase === 'playing' && game.currentPlayer}
+			<div class="turn-indicator" style:--player-color={game.currentPlayer.color}>
+				{#if game.isBotThinking}
+					<span class="thinking-text">Thinking...</span>
+				{:else if game.currentPlayer.type === 'human'}
+					<span>{game.currentPlayer.name}'s turn</span>
+				{/if}
+			</div>
+		{:else if game.phase === 'finished'}
+			<div class="game-over">
+				{#if game.winner}
+					<span class="winner-text" style:color={game.winner.color}>
+						{game.winner.name} wins!
+					</span>
+				{:else}
+					<span class="winner-text">It's a tie!</span>
+				{/if}
+			</div>
+		{/if}
+	</div>
 </div>
 
 <style>
@@ -165,6 +165,10 @@
 		color: var(--player-color);
 		font-weight: 500;
 		font-size: 0.8rem;
+	}
+
+	.status-section {
+		min-height: 2rem;
 		border-top: 1px solid var(--border-color);
 		padding-top: 0.4rem;
 	}
@@ -175,8 +179,7 @@
 
 	.game-over {
 		text-align: center;
-		padding: 0.5rem;
-		border-top: 1px solid var(--border-color);
+		padding: 0.3rem 0.5rem;
 	}
 
 	.winner-text {
@@ -239,14 +242,17 @@
 
 		.turn-indicator {
 			padding: 0.5rem;
-			padding-top: 0.75rem;
-			margin-top: 0.25rem;
 			font-size: 0.875rem;
 		}
 
-		.game-over {
-			padding: 0.75rem;
+		.status-section {
+			min-height: 2.5rem;
+			padding-top: 0.75rem;
 			margin-top: 0.25rem;
+		}
+
+		.game-over {
+			padding: 0.5rem;
 		}
 
 		.winner-text {

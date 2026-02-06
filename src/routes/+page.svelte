@@ -132,6 +132,7 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 0.5rem;
+		flex-shrink: 0;
 	}
 
 	.sidebar-right {
@@ -210,6 +211,7 @@
 			top: 1rem;
 			width: auto;
 			max-width: none;
+			min-width: 200px;
 		}
 
 		.sidebar-left {

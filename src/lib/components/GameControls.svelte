@@ -50,10 +50,12 @@
 				</svg>
 				Edit Mode
 			</button>
+		{:else}
+			<div class="control-btn-placeholder"></div>
 		{/if}
 	</div>
 
-	{#if game.phase === 'playing'}
+	{#if game.phase === 'playing' || game.phase === 'finished'}
 		<div class="game-info">
 			<div class="info-row">
 				<span>Squares</span>
@@ -153,6 +155,11 @@
 		cursor: pointer;
 		transition: all 0.15s ease;
 		-webkit-tap-highlight-color: transparent;
+		min-height: 44px;
+	}
+
+	.control-btn-placeholder {
+		flex: 1;
 		min-height: 44px;
 	}
 

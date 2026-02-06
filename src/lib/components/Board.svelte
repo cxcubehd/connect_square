@@ -10,6 +10,7 @@
 	const BASE_SNAP_RADIUS = 26;
 	const TOUCH_SNAP_RADIUS = 34;
 	const DEAD_ZONE_RADIUS = 8;
+	const DIRECTIONAL_OVERSHOOT_RADIUS = 120;
 
 	let isTouchDevice = $state(false);
 	let SNAP_RADIUS = $derived(isTouchDevice ? TOUCH_SNAP_RADIUS : BASE_SNAP_RADIUS);
@@ -165,12 +166,61 @@
 	let validOrigins = $derived(new Set(validMoves.map((m) => pointKey(m.from))));
 
 	let dragTarget = $derived.by((): Point | null => {
-		if (!isDragging || !dragOrigin || !hoveredPoint) return null;
-		if (hoveredPoint.row === dragOrigin.row && hoveredPoint.col === dragOrigin.col) return null;
-		const pk = pointKey(hoveredPoint);
-		if (validDestinations.has(pk)) return hoveredPoint;
-		return null;
+		if (!isDragging || !dragOrigin || !dragCursorSvg) return null;
+
+		if (hoveredPoint) {
+			if (hoveredPoint.row === dragOrigin.row && hoveredPoint.col === dragOrigin.col) return null;
+			const pk = pointKey(hoveredPoint);
+			if (validDestinations.has(pk)) return hoveredPoint;
+		}
+
+		return findDirectionalOvershootTarget();
 	});
+
+	function findDirectionalOvershootTarget(): Point | null {
+		if (!dragOrigin || !dragCursorSvg) return null;
+
+		const ox = dotX(dragOrigin.col);
+		const oy = dotY(dragOrigin.row);
+		const dx = dragCursorSvg.x - ox;
+		const dy = dragCursorSvg.y - oy;
+		const dragDist = Math.sqrt(dx * dx + dy * dy);
+		if (dragDist < 10) return null;
+
+		const ndx = dx / dragDist;
+		const ndy = dy / dragDist;
+
+		let bestTarget: Point | null = null;
+		let bestAlignment = -Infinity;
+
+		for (const destKey of validDestinations) {
+			const [dr, dc] = destKey.split(',').map(Number);
+			const tx = dotX(dc) + jitter(dr, dc);
+			const ty = dotY(dr) + jitter(dc, dr);
+
+			const toTargetX = tx - ox;
+			const toTargetY = ty - oy;
+			const toTargetDist = Math.sqrt(toTargetX * toTargetX + toTargetY * toTargetY);
+			if (toTargetDist < 1) continue;
+
+			const alignment = (toTargetX * ndx + toTargetY * ndy) / toTargetDist;
+			if (alignment < 0.7) continue;
+
+			const cursorToTargetX = dragCursorSvg.x - tx;
+			const cursorToTargetY = dragCursorSvg.y - ty;
+			const cursorToTargetDist = Math.sqrt(
+				cursorToTargetX * cursorToTargetX + cursorToTargetY * cursorToTargetY
+			);
+			if (cursorToTargetDist > DIRECTIONAL_OVERSHOOT_RADIUS) continue;
+
+			if (alignment > bestAlignment) {
+				bestAlignment = alignment;
+				bestTarget = { row: dr, col: dc };
+			}
+		}
+
+		return bestTarget;
+	}
 
 	let previewLine = $derived.by(() => {
 		const origin = game.selectedPoint;
@@ -480,6 +530,33 @@
 	});
 
 	let isNewCapture = $derived(new Set(game.lastCaptures));
+	let isSurvivorFilled = $derived(new Set(game.survivorFilledSquares));
+
+	let winHighlightSquares = $derived.by(() => {
+		if (game.phase !== 'finished' || !game.winner) return new Set<string>();
+		const winnerId = game.winner.id;
+		return new Set(
+			[...game.capturedSquares.entries()].filter(([, pid]) => pid === winnerId).map(([key]) => key)
+		);
+	});
+
+	let survivorFillOrder = $derived.by(() => {
+		const order = new Map<string, number>();
+		game.survivorFilledSquares.forEach((key, i) => order.set(key, i));
+		return order;
+	});
+
+	let totalSurvivorFillDuration = $derived(
+		game.survivorFilledSquares.length > 0 ? game.survivorFilledSquares.length * 40 + 400 : 0
+	);
+
+	function survivorFillDelay(key: string): number {
+		return (survivorFillOrder.get(key) ?? 0) * 40;
+	}
+
+	function winWaveDelay(col: number): number {
+		return col * 120;
+	}
 
 	function stripePatternId(playerId: number): string {
 		return `stripe-${playerId}`;
@@ -568,6 +645,8 @@
 		{/each}
 
 		{#each filledSquares as sq (sq.key)}
+			{@const isSurvivor = isSurvivorFilled.has(sq.key)}
+			{@const isWinSquare = winHighlightSquares.has(sq.key)}
 			<rect
 				x={dotX(sq.col) + 2}
 				y={dotY(sq.row) + 2}
@@ -577,6 +656,12 @@
 				fill="url(#{stripePatternId(sq.playerId)})"
 				class="filled-square"
 				class:newly-captured={isNewCapture.has(sq.key)}
+				class:survivor-filled={isSurvivor && !isWinSquare}
+				class:win-highlight={isWinSquare && !isSurvivor}
+				class:survivor-win-highlight={isSurvivor && isWinSquare}
+				style:--survivor-delay="{survivorFillDelay(sq.key)}ms"
+				style:--win-delay="{winWaveDelay(sq.col) +
+					(isSurvivor ? totalSurvivorFillDuration + 200 : 300)}ms"
 			/>
 		{/each}
 
@@ -789,6 +874,25 @@
 		animation: square-appear 0.4s ease-out both;
 	}
 
+	.survivor-filled {
+		animation: survivor-fill 0.4s ease-out both;
+		animation-delay: var(--survivor-delay, 0ms);
+	}
+
+	.win-highlight {
+		stroke: white;
+		animation: win-wave 0.6s ease-in-out both;
+		animation-delay: var(--win-delay, 0ms);
+	}
+
+	.survivor-win-highlight {
+		stroke: white;
+		animation:
+			survivor-fill 0.4s ease-out both,
+			win-wave 0.6s ease-in-out both;
+		animation-delay: var(--survivor-delay, 0ms), var(--win-delay, 0ms);
+	}
+
 	.guide-dash {
 		pointer-events: none;
 		animation: dash-flow 1.8s ease-in-out infinite;
@@ -845,6 +949,40 @@
 		100% {
 			opacity: 1;
 			clip-path: inset(0% round 3px);
+		}
+	}
+
+	@keyframes survivor-fill {
+		0% {
+			opacity: 0;
+			clip-path: inset(50% round 28px);
+		}
+		100% {
+			opacity: 1;
+			clip-path: inset(0% round 3px);
+		}
+	}
+
+	@keyframes win-wave {
+		0% {
+			opacity: 1;
+			stroke-width: 0;
+			stroke-opacity: 0;
+		}
+		30% {
+			opacity: 0.5;
+			stroke-width: 2;
+			stroke-opacity: 0.8;
+		}
+		60% {
+			opacity: 1;
+			stroke-width: 2;
+			stroke-opacity: 0.6;
+		}
+		100% {
+			opacity: 1;
+			stroke-width: 0;
+			stroke-opacity: 0;
 		}
 	}
 

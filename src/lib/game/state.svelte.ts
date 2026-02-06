@@ -28,6 +28,7 @@ export class GameState {
 	lastMoveFrom: Point | null = $state(null);
 	lastMoveTo: Point | null = $state(null);
 	lastMoveLineKey: string | null = $state(null);
+	survivorFilledSquares: string[] = $state([]);
 	private botTimeout: ReturnType<typeof setTimeout> | null = null;
 
 	get currentPlayer(): Player | undefined {
@@ -79,6 +80,7 @@ export class GameState {
 		this.lastMoveFrom = null;
 		this.lastMoveTo = null;
 		this.lastMoveLineKey = null;
+		this.survivorFilledSquares = [];
 
 		if (this.botTimeout) {
 			clearTimeout(this.botTimeout);
@@ -274,14 +276,57 @@ export class GameState {
 	}
 
 	private awardLastSurvivor(survivor: Player) {
+		const uncaptured = new Set<string>();
 		for (let r = 0; r < this.boardSize; r++) {
 			for (let c = 0; c < this.boardSize; c++) {
 				const key = `${r},${c}`;
 				if (!this.capturedSquares.has(key)) {
-					this.capturedSquares.set(key, survivor.id);
+					uncaptured.add(key);
 				}
 			}
 		}
+
+		const filled: string[] = [];
+		const queue: string[] = [];
+
+		for (const key of uncaptured) {
+			const [r, c] = key.split(',').map(Number);
+			const neighbors = [`${r - 1},${c}`, `${r + 1},${c}`, `${r},${c - 1}`, `${r},${c + 1}`];
+			const hasCapturedNeighbor = neighbors.some(
+				(n) => this.capturedSquares.has(n) && !uncaptured.has(n)
+			);
+			if (hasCapturedNeighbor) {
+				queue.push(key);
+			}
+		}
+
+		const visited = new Set<string>(queue);
+		for (const key of queue) {
+			uncaptured.delete(key);
+		}
+
+		let i = 0;
+		while (i < queue.length) {
+			const key = queue[i++];
+			filled.push(key);
+			this.capturedSquares.set(key, survivor.id);
+
+			const [r, c] = key.split(',').map(Number);
+			for (const neighbor of [`${r - 1},${c}`, `${r + 1},${c}`, `${r},${c - 1}`, `${r},${c + 1}`]) {
+				if (uncaptured.has(neighbor) && !visited.has(neighbor)) {
+					visited.add(neighbor);
+					uncaptured.delete(neighbor);
+					queue.push(neighbor);
+				}
+			}
+		}
+
+		for (const key of uncaptured) {
+			filled.push(key);
+			this.capturedSquares.set(key, survivor.id);
+		}
+
+		this.survivorFilledSquares = filled;
 		this.updateScores();
 	}
 
@@ -435,5 +480,6 @@ export class GameState {
 		this.lastMoveFrom = null;
 		this.lastMoveTo = null;
 		this.lastMoveLineKey = null;
+		this.survivorFilledSquares = [];
 	}
 }
