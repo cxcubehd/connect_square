@@ -24,6 +24,6 @@ UX:
 
 Verify all changes by using e2e testing.
 
-Use Bun. Do not use comments unless needed, rely on clean naming and structure instead!
+Do not use comments unless needed, rely on clean naming and structure instead!
 
 FOLLOW LATEST RECOMMENDED CLEAN CODE GUIDELINES.
