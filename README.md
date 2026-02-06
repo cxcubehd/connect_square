@@ -2,7 +2,7 @@
 
 ![Connect, Square! Logo](logo.jpg)
 
-**Connect, Square!** is a modern, strategic board game of territory and connections built with Svelte 5. Compete against friends or AI to capture the most territory on a grid by drawing lines and completing squares.
+**Connect, Square!** is a modern, strategic game of territory and connections built with Svelte 5. Compete against friends or AI to capture the most territory on a grid by drawing lines and completing squares.
 
 ## How to Play
 
@@ -14,11 +14,11 @@ For detailed game rules, turn structure, and scoring mechanics, please refer to 
 2.  **Turn:** On your turn, select one of your existing points and connect it to an adjacent empty point.
 3.  **Capture:** If your line completes one or more 1x1 squares, those squares are captured in your color, and you get an extra move.
 4.  **Connect:** You can only draw lines from points you already "own" (points that are part of your lines).
-5.  **Win:** The game ends when the board is full or no moves are possible. The player with the highest score wins!
+5.  **Win:** The game ends when the squares are full or no moves are possible. The player with the highest score wins!
 
 ## Features
 
-- **Dynamic Game Setup:** Choose your board size (from 4x4 to 12x12) and number of players.
+- **Dynamic Game Setup:** Choose your grid size (from 4x4 to 12x12) and number of players.
 - **Smart AI Bots:** Play solo against multiple AI difficulty levels (Random, Greedy, etc.).
 - **Responsive Design:** Fully playable on mobile, tablet, and desktop.
 - **Theme Support:** Beautiful light and dark modes with system preference detection.
