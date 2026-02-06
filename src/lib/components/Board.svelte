@@ -415,7 +415,7 @@
 		if (isDragging && dragTarget?.row === row && dragTarget?.col === col) return 6;
 		if (validDestinations.has(pk) && (game.selectedPoint || isDragging)) return 5;
 		if (validOrigins.has(pk)) return 4.5;
-		if (isLastMoveDot(row, col)) return 5;
+		if (isLastMoveDot(row, col)) return 4.5;
 
 		for (const [, points] of game.markedPoints) {
 			if (points.has(pk)) return 4;
@@ -450,19 +450,6 @@
 	});
 
 	let isNewCapture = $derived(new Set(game.lastCaptures));
-
-	function dashAnimationDirection(
-		originRow: number,
-		originCol: number,
-		destRow: number,
-		destCol: number
-	): string {
-		const dr = destRow - originRow;
-		const dc = destCol - originCol;
-		const vert = dr < 0 ? 'up' : dr > 0 ? 'down' : '';
-		const horiz = dc < 0 ? 'left' : dc > 0 ? 'right' : '';
-		return `${vert}${horiz}` || 'right';
-	}
 
 	function stripePatternId(playerId: number): string {
 		return `stripe-${playerId}`;
@@ -557,10 +544,10 @@
 			<path
 				d={penPath(line.fromX, line.fromY, line.toX, line.toY)}
 				stroke={line.color}
-				stroke-width={isLast ? 3.5 : line.diag ? 2 : 2.5}
+				stroke-width={line.diag ? 2 : 2.5}
 				stroke-linecap="round"
 				fill="none"
-				opacity={isLast ? 1 : line.diag ? 0.6 : 0.85}
+				opacity={line.diag ? 0.6 : 0.85}
 				filter="url(#pencil-texture)"
 				class="drawn-line"
 				class:last-move-line={isLast}
@@ -573,12 +560,6 @@
 			{#if !showSinglePreview}
 				{#each [...validDestinations] as destKey (destKey)}
 					{@const [dr, dc] = destKey.split(',').map(Number)}
-					{@const dir = dashAnimationDirection(
-						game.selectedPoint.row,
-						game.selectedPoint.col,
-						dr,
-						dc
-					)}
 					<line
 						x1={dotX(game.selectedPoint.col) +
 							jitter(game.selectedPoint.row, game.selectedPoint.col)}
@@ -591,7 +572,7 @@
 						stroke-dasharray="4 4"
 						opacity="0.25"
 						stroke-linecap="round"
-						class="guide-dash dir-{dir}"
+						class="guide-dash"
 					/>
 				{/each}
 			{/if}
@@ -705,13 +686,13 @@
 	}
 
 	.dot:hover {
-		r: 6;
-		filter: brightness(1.2);
+		r: 5.5;
+		opacity: 0.9;
 	}
 
 	.dot-hovered {
-		r: 5.5;
-		filter: brightness(1.15);
+		r: 5;
+		opacity: 0.85;
 	}
 
 	.dot-selected {
@@ -737,11 +718,10 @@
 
 	.dot-can-select {
 		cursor: pointer;
-		filter: brightness(1.1);
 	}
 
 	.dot-last-move {
-		filter: drop-shadow(0 0 3px currentColor);
+		opacity: 0.95;
 	}
 
 	.drawn-line {
@@ -749,44 +729,21 @@
 	}
 
 	.last-move-line {
-		filter: drop-shadow(0 0 2px currentColor) url(#pencil-texture);
+		filter: url(#pencil-texture);
+		opacity: 0.95;
 	}
 
 	.filled-square {
-		animation: square-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+		opacity: 1;
 	}
 
 	.newly-captured {
-		animation: square-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+		animation: square-appear 0.4s ease-out both;
 	}
 
 	.guide-dash {
 		pointer-events: none;
-	}
-
-	.guide-dash.dir-up {
-		animation: dash-up 1.8s ease-in-out infinite;
-	}
-	.guide-dash.dir-down {
-		animation: dash-down 1.8s ease-in-out infinite;
-	}
-	.guide-dash.dir-left {
-		animation: dash-left 1.8s ease-in-out infinite;
-	}
-	.guide-dash.dir-right {
-		animation: dash-right 1.8s ease-in-out infinite;
-	}
-	.guide-dash.dir-upleft {
-		animation: dash-upleft 1.8s ease-in-out infinite;
-	}
-	.guide-dash.dir-upright {
-		animation: dash-upright 1.8s ease-in-out infinite;
-	}
-	.guide-dash.dir-downleft {
-		animation: dash-downleft 1.8s ease-in-out infinite;
-	}
-	.guide-dash.dir-downright {
-		animation: dash-downright 1.8s ease-in-out infinite;
+		animation: dash-flow 1.8s ease-in-out infinite;
 	}
 
 	.preview-line {
@@ -838,12 +795,8 @@
 			transform: scale(0);
 			rx: 28;
 		}
-		60% {
-			opacity: 1;
-			transform: scale(1.05);
-			rx: 10;
-		}
 		100% {
+			opacity: 1;
 			transform: scale(1);
 			rx: 3;
 		}
@@ -869,107 +822,15 @@
 		}
 	}
 
-	@keyframes dash-up {
-		0%,
-		100% {
+	@keyframes dash-flow {
+		0% {
 			stroke-dashoffset: 0;
 		}
-		50% {
+		40% {
 			stroke-dashoffset: -8;
 		}
-		70% {
+		100% {
 			stroke-dashoffset: -8;
-		}
-	}
-
-	@keyframes dash-down {
-		0%,
-		100% {
-			stroke-dashoffset: 0;
-		}
-		50% {
-			stroke-dashoffset: 8;
-		}
-		70% {
-			stroke-dashoffset: 8;
-		}
-	}
-
-	@keyframes dash-left {
-		0%,
-		100% {
-			stroke-dashoffset: 0;
-		}
-		50% {
-			stroke-dashoffset: -8;
-		}
-		70% {
-			stroke-dashoffset: -8;
-		}
-	}
-
-	@keyframes dash-right {
-		0%,
-		100% {
-			stroke-dashoffset: 0;
-		}
-		50% {
-			stroke-dashoffset: 8;
-		}
-		70% {
-			stroke-dashoffset: 8;
-		}
-	}
-
-	@keyframes dash-upleft {
-		0%,
-		100% {
-			stroke-dashoffset: 0;
-		}
-		50% {
-			stroke-dashoffset: -8;
-		}
-		70% {
-			stroke-dashoffset: -8;
-		}
-	}
-
-	@keyframes dash-upright {
-		0%,
-		100% {
-			stroke-dashoffset: 0;
-		}
-		50% {
-			stroke-dashoffset: 8;
-		}
-		70% {
-			stroke-dashoffset: 8;
-		}
-	}
-
-	@keyframes dash-downleft {
-		0%,
-		100% {
-			stroke-dashoffset: 0;
-		}
-		50% {
-			stroke-dashoffset: 8;
-		}
-		70% {
-			stroke-dashoffset: 8;
-		}
-	}
-
-	@keyframes dash-downright {
-		0%,
-		100% {
-			stroke-dashoffset: 0;
-		}
-		50% {
-			stroke-dashoffset: 8;
-		}
-		70% {
-			stroke-dashoffset: 8;
 		}
 	}
 </style>

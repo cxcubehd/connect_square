@@ -262,7 +262,7 @@ test.describe('Connect, Square! - Visual Enhancements', () => {
 		expect(count).toBe(49);
 	});
 
-	test('dashed guide lines have directional animation', async ({ page }) => {
+	test('dashed guide lines have flow animation', async ({ page }) => {
 		const originDot = page.locator('circle[aria-label="Point 0,0"]');
 		await originDot.click({ modifiers: ['Control'] });
 		await page.waitForTimeout(100);
@@ -273,6 +273,6 @@ test.describe('Connect, Square! - Visual Enhancements', () => {
 
 		const firstDash = guideDashes.first();
 		const classes = await firstDash.getAttribute('class');
-		expect(classes).toMatch(/dir-/);
+		expect(classes).toMatch(/guide-dash/);
 	});
 });
