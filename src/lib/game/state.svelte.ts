@@ -10,6 +10,7 @@ import {
 	getTotalSquares
 } from './logic.js';
 import { getBotStrategy } from './bot.js';
+import { requestServerMove } from './server-bot.js';
 
 export class GameState {
 	boardSize = $state(6);
@@ -93,6 +94,8 @@ export class GameState {
 			color: c.color,
 			type: c.type,
 			botStrategyId: c.botStrategyId,
+			serverUrl: c.serverUrl,
+			serverBotParams: c.serverBotParams,
 			eliminated: false,
 			score: 0
 		}));
@@ -347,13 +350,64 @@ export class GameState {
 
 	private scheduleBotMoveIfNeeded() {
 		const player = this.currentPlayer;
-		if (!player || player.type !== 'bot' || this.phase !== 'playing') return;
+		if (!player || player.type === 'human' || this.phase !== 'playing') return;
 
 		this.isBotThinking = true;
+
+		if (player.type === 'server') {
+			this.executeServerMove();
+			return;
+		}
 
 		this.botTimeout = setTimeout(() => {
 			this.executeBotMove();
 		}, 400);
+	}
+
+	private async executeServerMove() {
+		const player = this.currentPlayer;
+		if (!player || player.type !== 'server' || this.phase !== 'playing') {
+			this.isBotThinking = false;
+			return;
+		}
+
+		const serverUrl = player.serverUrl ?? 'http://localhost:3001';
+		const minDelay = 400;
+		const startTime = Date.now();
+
+		try {
+			const move = await requestServerMove(
+				serverUrl,
+				this.boardSize,
+				player.id,
+				this.lines,
+				this.markedPoints,
+				this.capturedSquares,
+				this.players,
+				player.serverBotParams
+			);
+
+			const elapsed = Date.now() - startTime;
+			if (elapsed < minDelay) {
+				await new Promise((resolve) => setTimeout(resolve, minDelay - elapsed));
+			}
+
+			if (this.phase !== 'playing' || this.currentPlayer?.id !== player.id) {
+				this.isBotThinking = false;
+				return;
+			}
+
+			this.isBotThinking = false;
+
+			if (move) {
+				this.executeMove(move.from, move.to);
+			} else {
+				this.advanceTurn();
+			}
+		} catch {
+			this.isBotThinking = false;
+			this.advanceTurn();
+		}
 	}
 
 	private executeBotMove() {
@@ -441,17 +495,30 @@ export class GameState {
 		this.updateScores();
 	}
 
-	assignBot(playerIndex: number, botId: string | null) {
+	assignBot(playerIndex: number, botId: string | null, serverUrl?: string, serverBotParams?: Record<string, unknown>) {
 		if (playerIndex < 0 || playerIndex >= this.players.length) return;
+
+		let type: 'human' | 'bot' | 'server';
+		if (botId === 'server') {
+			type = 'server';
+			botId = null;
+		} else if (botId) {
+			type = 'bot';
+		} else {
+			type = 'human';
+		}
+
 		this.players[playerIndex] = {
 			...this.players[playerIndex],
-			type: botId ? 'bot' : 'human',
-			botStrategyId: botId
+			type,
+			botStrategyId: botId,
+			serverUrl: type === 'server' ? (serverUrl ?? 'http://localhost:3001') : undefined,
+			serverBotParams: type === 'server' ? serverBotParams : undefined
 		};
 		this.players = [...this.players];
 
 		if (
-			botId &&
+			type !== 'human' &&
 			this.currentPlayerIndex === playerIndex &&
 			this.phase === 'playing' &&
 			!this.isBotThinking

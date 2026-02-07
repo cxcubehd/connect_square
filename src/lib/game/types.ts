@@ -7,8 +7,10 @@ export interface Player {
 	id: number;
 	name: string;
 	color: string;
-	type: 'human' | 'bot';
+	type: 'human' | 'bot' | 'server';
 	botStrategyId: string | null;
+	serverUrl?: string;
+	serverBotParams?: Record<string, unknown>;
 	eliminated: boolean;
 	score: number;
 }
@@ -16,8 +18,10 @@ export interface Player {
 export interface PlayerConfig {
 	name: string;
 	color: string;
-	type: 'human' | 'bot';
+	type: 'human' | 'bot' | 'server';
 	botStrategyId: string | null;
+	serverUrl?: string;
+	serverBotParams?: Record<string, unknown>;
 }
 
 export type GamePhase = 'setup' | 'playing' | 'finished';
