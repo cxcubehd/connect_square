@@ -12,6 +12,8 @@ import {
 import { getBotStrategy } from './bot.js';
 import { requestServerMove } from './server-bot.js';
 
+const SERVER_MOVE_MIN_DELAY_MS = 300;
+
 export class GameState {
 	boardSize = $state(6);
 	players: Player[] = $state([]);
@@ -372,6 +374,7 @@ export class GameState {
 		}
 
 		const serverUrl = player.serverUrl ?? 'http://localhost:3001';
+		const startTime = Date.now();
 
 		try {
 			const move = await requestServerMove(
@@ -384,6 +387,11 @@ export class GameState {
 				this.players,
 				player.serverBotParams
 			);
+
+			const elapsed = Date.now() - startTime;
+			if (elapsed < SERVER_MOVE_MIN_DELAY_MS) {
+				await new Promise((resolve) => setTimeout(resolve, SERVER_MOVE_MIN_DELAY_MS - elapsed));
+			}
 
 			if (this.phase !== 'playing' || this.currentPlayer?.id !== player.id) {
 				this.isBotThinking = false;
