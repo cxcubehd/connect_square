@@ -30,7 +30,7 @@ export class GameState {
 	lastMoveTo: Point | null = $state(null);
 	lastMoveLineKey: string | null = $state(null);
 	survivorFilledSquares: string[] = $state([]);
-	private botTimeout: ReturnType<typeof setTimeout> | null = null;
+	private botTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 	get currentPlayer(): Player | undefined {
 		return this.players[this.currentPlayerIndex];
@@ -83,9 +83,9 @@ export class GameState {
 		this.lastMoveLineKey = null;
 		this.survivorFilledSquares = [];
 
-		if (this.botTimeout) {
-			clearTimeout(this.botTimeout);
-			this.botTimeout = null;
+		if (this.botTimeoutId) {
+			clearTimeout(this.botTimeoutId);
+			this.botTimeoutId = null;
 		}
 
 		this.players = configs.map((c, i) => ({
@@ -338,9 +338,9 @@ export class GameState {
 		this.selectedPoint = null;
 		this.isBotThinking = false;
 
-		if (this.botTimeout) {
-			clearTimeout(this.botTimeout);
-			this.botTimeout = null;
+		if (this.botTimeoutId) {
+			clearTimeout(this.botTimeoutId);
+			this.botTimeoutId = null;
 		}
 
 		const maxScore = Math.max(...this.players.map((p) => p.score));
@@ -359,7 +359,7 @@ export class GameState {
 			return;
 		}
 
-		this.botTimeout = setTimeout(() => {
+		this.botTimeoutId = setTimeout(() => {
 			this.executeBotMove();
 		}, 400);
 	}
@@ -372,8 +372,6 @@ export class GameState {
 		}
 
 		const serverUrl = player.serverUrl ?? 'http://localhost:3001';
-		const minDelay = 400;
-		const startTime = Date.now();
 
 		try {
 			const move = await requestServerMove(
@@ -386,11 +384,6 @@ export class GameState {
 				this.players,
 				player.serverBotParams
 			);
-
-			const elapsed = Date.now() - startTime;
-			if (elapsed < minDelay) {
-				await new Promise((resolve) => setTimeout(resolve, minDelay - elapsed));
-			}
 
 			if (this.phase !== 'playing' || this.currentPlayer?.id !== player.id) {
 				this.isBotThinking = false;
@@ -528,9 +521,9 @@ export class GameState {
 	}
 
 	reset() {
-		if (this.botTimeout) {
-			clearTimeout(this.botTimeout);
-			this.botTimeout = null;
+		if (this.botTimeoutId) {
+			clearTimeout(this.botTimeoutId);
+			this.botTimeoutId = null;
 		}
 		this.phase = 'setup';
 		this.lines.clear();

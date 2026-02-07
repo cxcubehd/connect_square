@@ -2,18 +2,27 @@
 	import { type GameState } from '$lib/game/state.svelte.js';
 	import { pointKey, parseLineKey, isDiagonal } from '$lib/game/logic.js';
 	import type { Point } from '$lib/game/types.js';
+	import {
+		PADDING,
+		CELL_SIZE,
+		BASE_SNAP_RADIUS,
+		TOUCH_SNAP_RADIUS,
+		TURN_HINT_DURATION_MS,
+		dotX,
+		dotY,
+		jitter,
+		penPath,
+		svgPointFromEvent,
+		findNearestSnappablePoint,
+		findDirectionalOvershootTarget,
+		stripePatternId,
+		winWaveDelay
+	} from './board-utils.js';
 
 	let { game }: { game: GameState } = $props();
 
-	const PADDING = 40;
-	const CELL_SIZE = 60;
-	const BASE_SNAP_RADIUS = 26;
-	const TOUCH_SNAP_RADIUS = 34;
-	const DEAD_ZONE_RADIUS = 8;
-	const DIRECTIONAL_OVERSHOOT_RADIUS = 260;
-
 	let isTouchDevice = $state(false);
-	let SNAP_RADIUS = $derived(isTouchDevice ? TOUCH_SNAP_RADIUS : BASE_SNAP_RADIUS);
+	let snapRadius = $derived(isTouchDevice ? TOUCH_SNAP_RADIUS : BASE_SNAP_RADIUS);
 
 	let svgWidth = $derived(game.boardSize * CELL_SIZE + PADDING * 2);
 	let svgHeight = $derived(game.boardSize * CELL_SIZE + PADDING * 2);
@@ -25,8 +34,6 @@
 	let dragMoved = $state(false);
 	let hoveredPoint: Point | null = $state(null);
 	let turnHintActive = $state(false);
-
-	const TURN_HINT_DURATION_MS = 600;
 
 	let isHumanTurn = $derived(
 		game.phase === 'playing' && game.currentPlayer?.type === 'human' && !game.editMode
@@ -42,103 +49,6 @@
 
 		return () => clearTimeout(timeout);
 	});
-
-	function dotX(col: number): number {
-		return PADDING + col * CELL_SIZE;
-	}
-
-	function dotY(row: number): number {
-		return PADDING + row * CELL_SIZE;
-	}
-
-	function jitter(a: number, b: number, scale = 1.2): number {
-		let h = a * 374761393 + b * 668265263;
-		h = (h ^ (h >> 13)) * 1274126177;
-		h = h ^ (h >> 16);
-		return ((h & 0xffff) / 0xffff - 0.5) * scale;
-	}
-
-	function penPath(x1: number, y1: number, x2: number, y2: number): string {
-		const mx = (x1 + x2) / 2;
-		const my = (y1 + y2) / 2;
-		const dx = -(y2 - y1);
-		const dy = x2 - x1;
-		const len = Math.sqrt(dx * dx + dy * dy) || 1;
-		const offset = jitter(Math.round(x1 * 100 + x2), Math.round(y1 * 100 + y2), 2);
-		const cx = mx + (dx / len) * offset;
-		const cy = my + (dy / len) * offset;
-		return `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
-	}
-
-	function svgPointFromEvent(e: MouseEvent | PointerEvent): { x: number; y: number } | null {
-		if (!svgElement) return null;
-		const pt = svgElement.createSVGPoint();
-		pt.x = e.clientX;
-		pt.y = e.clientY;
-		const ctm = svgElement.getScreenCTM();
-		if (!ctm) return null;
-		const svgPt = pt.matrixTransform(ctm.inverse());
-		return { x: svgPt.x, y: svgPt.y };
-	}
-
-	function findNearestSnappablePoint(svgPos: { x: number; y: number }): Point | null {
-		let best: Point | null = null;
-		let bestDist = Infinity;
-		const gridSize = game.boardSize + 1;
-
-		for (let row = 0; row < gridSize; row++) {
-			for (let col = 0; col < gridSize; col++) {
-				const px = dotX(col);
-				const py = dotY(row);
-				const dx = svgPos.x - px;
-				const dy = svgPos.y - py;
-				const dist = Math.sqrt(dx * dx + dy * dy);
-				if (dist < bestDist && dist < SNAP_RADIUS) {
-					bestDist = dist;
-					best = { row, col };
-				}
-			}
-		}
-
-		if (!best) return null;
-
-		const centerDistances = computeCenterDistances(svgPos, best);
-		if (centerDistances.isInDeadZone) return null;
-
-		return best;
-	}
-
-	function computeCenterDistances(
-		svgPos: { x: number; y: number },
-		candidate: Point
-	): { isInDeadZone: boolean } {
-		const adjacentCenters: { x: number; y: number }[] = [];
-		for (let dr = -1; dr <= 0; dr++) {
-			for (let dc = -1; dc <= 0; dc++) {
-				const sr = candidate.row + dr;
-				const sc = candidate.col + dc;
-				if (sr >= 0 && sr < game.boardSize && sc >= 0 && sc < game.boardSize) {
-					adjacentCenters.push({
-						x: dotX(sc) + CELL_SIZE / 2,
-						y: dotY(sr) + CELL_SIZE / 2
-					});
-				}
-			}
-		}
-
-		for (const center of adjacentCenters) {
-			const dx = svgPos.x - center.x;
-			const dy = svgPos.y - center.y;
-			const dist = Math.sqrt(dx * dx + dy * dy);
-			const dotDx = svgPos.x - dotX(candidate.col);
-			const dotDy = svgPos.y - dotY(candidate.row);
-			const dotDist = Math.sqrt(dotDx * dotDx + dotDy * dotDy);
-			if (dist < DEAD_ZONE_RADIUS && dotDist > dist) {
-				return { isInDeadZone: true };
-			}
-		}
-		return { isInDeadZone: false };
-	}
 
 	let currentPlayerPoints = $derived.by(() => {
 		const player = game.currentPlayer;
@@ -174,53 +84,8 @@
 			if (validDestinations.has(pk)) return hoveredPoint;
 		}
 
-		return findDirectionalOvershootTarget();
+		return findDirectionalOvershootTarget(dragOrigin, dragCursorSvg, validDestinations);
 	});
-
-	function findDirectionalOvershootTarget(): Point | null {
-		if (!dragOrigin || !dragCursorSvg) return null;
-
-		const ox = dotX(dragOrigin.col);
-		const oy = dotY(dragOrigin.row);
-		const dx = dragCursorSvg.x - ox;
-		const dy = dragCursorSvg.y - oy;
-		const dragDist = Math.sqrt(dx * dx + dy * dy);
-		if (dragDist < 10) return null;
-
-		const ndx = dx / dragDist;
-		const ndy = dy / dragDist;
-
-		let bestTarget: Point | null = null;
-		let bestAlignment = -Infinity;
-
-		for (const destKey of validDestinations) {
-			const [dr, dc] = destKey.split(',').map(Number);
-			const tx = dotX(dc) + jitter(dr, dc);
-			const ty = dotY(dr) + jitter(dc, dr);
-
-			const toTargetX = tx - ox;
-			const toTargetY = ty - oy;
-			const toTargetDist = Math.sqrt(toTargetX * toTargetX + toTargetY * toTargetY);
-			if (toTargetDist < 1) continue;
-
-			const alignment = (toTargetX * ndx + toTargetY * ndy) / toTargetDist;
-			if (alignment < 0.7) continue;
-
-			const cursorToTargetX = dragCursorSvg.x - tx;
-			const cursorToTargetY = dragCursorSvg.y - ty;
-			const cursorToTargetDist = Math.sqrt(
-				cursorToTargetX * cursorToTargetX + cursorToTargetY * cursorToTargetY
-			);
-			if (cursorToTargetDist > DIRECTIONAL_OVERSHOOT_RADIUS) continue;
-
-			if (alignment > bestAlignment) {
-				bestAlignment = alignment;
-				bestTarget = { row: dr, col: dc };
-			}
-		}
-
-		return bestTarget;
-	}
 
 	let previewLine = $derived.by(() => {
 		const origin = game.selectedPoint;
@@ -255,10 +120,10 @@
 
 		if (e.ctrlKey || e.metaKey) return;
 
-		const svgPos = svgPointFromEvent(e);
+		const svgPos = svgPointFromEvent(svgElement, e);
 		if (!svgPos) return;
 
-		const point = findNearestSnappablePoint(svgPos);
+		const point = findNearestSnappablePoint(svgPos, game.boardSize, snapRadius);
 		if (!point) return;
 
 		const pk = pointKey(point);
@@ -276,7 +141,7 @@
 	}
 
 	function handlePointerMove(e: PointerEvent) {
-		const svgPos = svgPointFromEvent(e);
+		const svgPos = svgPointFromEvent(svgElement, e);
 		if (!svgPos) return;
 
 		if (isDragging) {
@@ -293,7 +158,7 @@
 			}
 		}
 
-		hoveredPoint = findNearestSnappablePoint(svgPos);
+		hoveredPoint = findNearestSnappablePoint(svgPos, game.boardSize, snapRadius);
 	}
 
 	function handlePointerUp(e: PointerEvent) {
@@ -529,8 +394,8 @@
 		return dots;
 	});
 
-	let isNewCapture = $derived(new Set(game.lastCaptures));
-	let isSurvivorFilled = $derived(new Set(game.survivorFilledSquares));
+	let newCaptureKeys = $derived(new Set(game.lastCaptures));
+	let survivorFilledKeys = $derived(new Set(game.survivorFilledSquares));
 
 	let winHighlightSquares = $derived.by(() => {
 		if (game.phase !== 'finished' || !game.winner) return new Set<string>();
@@ -552,14 +417,6 @@
 
 	function survivorFillDelay(key: string): number {
 		return (survivorFillOrder.get(key) ?? 0) * 40;
-	}
-
-	function winWaveDelay(col: number): number {
-		return col * 120;
-	}
-
-	function stripePatternId(playerId: number): string {
-		return `stripe-${playerId}`;
 	}
 </script>
 
@@ -645,7 +502,7 @@
 		{/each}
 
 		{#each filledSquares as sq (sq.key)}
-			{@const isSurvivor = isSurvivorFilled.has(sq.key)}
+			{@const isSurvivor = survivorFilledKeys.has(sq.key)}
 			{@const isWinSquare = winHighlightSquares.has(sq.key)}
 			<rect
 				x={dotX(sq.col) + 2}
@@ -655,7 +512,7 @@
 				rx="3"
 				fill="url(#{stripePatternId(sq.playerId)})"
 				class="filled-square"
-				class:newly-captured={isNewCapture.has(sq.key)}
+				class:newly-captured={newCaptureKeys.has(sq.key)}
 				class:survivor-filled={isSurvivor && !isWinSquare}
 				class:win-highlight={isWinSquare && !isSurvivor}
 				class:survivor-win-highlight={isSurvivor && isWinSquare}

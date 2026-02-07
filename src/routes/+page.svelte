@@ -34,7 +34,7 @@
 	<main class="app-main">
 		{#if game.phase === 'setup'}
 			<div class="setup-view">
-				<GameSetup onstart={handleStart} />
+				<GameSetup onStart={handleStart} />
 			</div>
 		{:else}
 			<div class="game-view">
