@@ -13,6 +13,7 @@
 		"lint": "prettier --check .",
 		"format": "prettier --write .",
 		"test:e2e": "playwright test",
+		"build:wasm": "cd ../engine && wasm-pack build cs_wasm --target web --out-dir ../../app/src/lib/wasm",
 		"test": "npm run test:e2e"
 	},
 	"devDependencies": {
