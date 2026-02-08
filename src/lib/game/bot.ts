@@ -6,7 +6,7 @@ import {
 	getSquareBorderKeys,
 	isDiagonal
 } from './logic.js';
-import { wasmHardBot } from './wasm-bot.js';
+import { wasmHardBot, wasmStrongBot } from './wasm-bot.js';
 
 export const randomBot: BotStrategy = {
 	id: 'random',
@@ -51,11 +51,13 @@ export const greedyBot: BotStrategy = {
 };
 
 export { wasmHardBot as hardBot };
+export { wasmStrongBot as strongBot };
 
 const botRegistry = new Map<string, BotStrategy>();
 botRegistry.set(randomBot.id, randomBot);
 botRegistry.set(greedyBot.id, greedyBot);
 botRegistry.set(wasmHardBot.id, wasmHardBot);
+botRegistry.set(wasmStrongBot.id, wasmStrongBot);
 
 export function getBotStrategy(id: string): BotStrategy | undefined {
 	return botRegistry.get(id);

@@ -50,9 +50,10 @@ interface WasmMoveRequest {
 	captured_squares: WasmCapturedSquareEntry[];
 	players: WasmPlayerEntry[];
 	time_budget_ms: number;
+	bot_id: string;
 }
 
-function buildWasmRequest(context: BotContext, timeBudgetMs: number): WasmMoveRequest {
+function buildWasmRequest(context: BotContext, timeBudgetMs: number, botId: string): WasmMoveRequest {
 	const lines: WasmLineEntry[] = [];
 	for (const [key, playerId] of context.lines) {
 		const [from, to] = parseLineKey(key);
@@ -87,7 +88,8 @@ function buildWasmRequest(context: BotContext, timeBudgetMs: number): WasmMoveRe
 		marked_points: markedPoints,
 		captured_squares: capturedSquares,
 		players,
-		time_budget_ms: timeBudgetMs
+		time_budget_ms: timeBudgetMs,
+		bot_id: botId
 	};
 }
 
@@ -105,7 +107,29 @@ export const wasmHardBot: BotStrategy = {
 			return validMoves[Math.floor(Math.random() * validMoves.length)];
 		}
 
-		const request = buildWasmRequest(context, WASM_TIME_BUDGET_MS);
+		const request = buildWasmRequest(context, WASM_TIME_BUDGET_MS, 'hard');
+		const resultJson = select_move(JSON.stringify(request));
+
+		if (!resultJson) return null;
+
+		const result = JSON.parse(resultJson) as { from: Point; to: Point };
+		return { from: result.from, to: result.to };
+	}
+};
+
+export const wasmStrongBot: BotStrategy = {
+	id: 'strong',
+	name: 'Strong',
+	description: 'Strongest bot using heuristic evaluation and endgame minimax',
+	selectMove(validMoves: BotMove[], context: BotContext): BotMove | null {
+		if (validMoves.length === 0) return null;
+		if (validMoves.length === 1) return validMoves[0];
+
+		if (!wasmReady) {
+			return validMoves[Math.floor(Math.random() * validMoves.length)];
+		}
+
+		const request = buildWasmRequest(context, WASM_TIME_BUDGET_MS, 'strong');
 		const resultJson = select_move(JSON.stringify(request));
 
 		if (!resultJson) return null;
