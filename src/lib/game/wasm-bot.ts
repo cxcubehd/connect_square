@@ -1,6 +1,6 @@
 import type { BotStrategy, BotMove, BotContext, Point } from './types.js';
 import { parseLineKey, parsePointKey } from './logic.js';
-import init, { select_move } from '../wasm/cs_wasm.js';
+import init, { select_move } from '../wasm/csq_wasm.js';
 
 let wasmReady = false;
 let wasmInitPromise: Promise<void> | null = null;
