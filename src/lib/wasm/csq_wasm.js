@@ -1,4 +1,4 @@
-/* @ts-self-types="./cs_wasm.d.ts" */
+/* @ts-self-types="./csq_wasm.d.ts" */
 
 /**
  * @param {string} request_json
@@ -22,7 +22,7 @@ function __wbg_get_imports() {
         __wbg___wbindgen_throw_be289d5034ed271b: function(arg0, arg1) {
             throw new Error(getStringFromWasm0(arg0, arg1));
         },
-        __wbg_getRandomValues_1c61fac11405ffdc: function() { return handleError(function (arg0, arg1) {
+        __wbg_getRandomValues_2a91986308c74a93: function() { return handleError(function (arg0, arg1) {
             globalThis.crypto.getRandomValues(getArrayU8FromWasm0(arg0, arg1));
         }, arguments); },
         __wbg_now_a3af9a2f4bbaa4d1: function() {
@@ -41,7 +41,7 @@ function __wbg_get_imports() {
     };
     return {
         __proto__: null,
-        "./cs_wasm_bg.js": import0,
+        "./csq_wasm_bg.js": import0,
     };
 }
 
@@ -221,7 +221,7 @@ async function __wbg_init(module_or_path) {
     }
 
     if (module_or_path === undefined) {
-        module_or_path = new URL('cs_wasm_bg.wasm', import.meta.url);
+        module_or_path = new URL('csq_wasm_bg.wasm', import.meta.url);
     }
     const imports = __wbg_get_imports();
 

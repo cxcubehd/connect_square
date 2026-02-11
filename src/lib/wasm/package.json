@@ -1,14 +1,14 @@
 {
-  "name": "cs_wasm",
+  "name": "csq_wasm",
   "type": "module",
   "version": "0.1.0",
   "files": [
-    "cs_wasm_bg.wasm",
-    "cs_wasm.js",
-    "cs_wasm.d.ts"
+    "csq_wasm_bg.wasm",
+    "csq_wasm.js",
+    "csq_wasm.d.ts"
   ],
-  "main": "cs_wasm.js",
-  "types": "cs_wasm.d.ts",
+  "main": "csq_wasm.js",
+  "types": "csq_wasm.d.ts",
   "sideEffects": [
     "./snippets/*"
   ]
