@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Cpu, Server, UserRound } from '@lucide/svelte';
+
 	import type { PlayerConfig } from '$lib/game/types.js';
 	import {
 		PLAYER_COLORS,
@@ -46,7 +48,8 @@
 			...playerConfigs[index],
 			type,
 			botStrategyId: type === 'bot' ? (bots.at(-1)?.id ?? 'random') : null,
-			serverUrl: type === 'server' ? (playerConfigs[index].serverUrl ?? 'http://localhost:3001') : undefined,
+			serverUrl:
+				type === 'server' ? (playerConfigs[index].serverUrl ?? 'http://localhost:3001') : undefined,
 			serverBotParams: type === 'server' ? playerConfigs[index].serverBotParams : undefined
 		};
 		playerConfigs = [...playerConfigs];
@@ -62,13 +65,13 @@
 				name: mode === 'bvb' ? 'Bot 1' : 'Player 1',
 				color: PLAYER_COLORS[0].hex,
 				type: mode === 'bvb' ? 'bot' : 'human',
-				botStrategyId: mode === 'bvb' ? 'hard' : null
+				botStrategyId: mode === 'bvb' ? 'strong' : null
 			},
 			{
 				name: mode === 'pvp' ? 'Player 2' : mode === 'pvb' ? 'Bot' : 'Bot 2',
 				color: PLAYER_COLORS[1].hex,
 				type: mode === 'pvp' ? 'human' : 'bot',
-				botStrategyId: mode === 'pvp' ? null : 'hard'
+				botStrategyId: mode === 'pvp' ? null : 'strong'
 			}
 		];
 		onStart(boardSize, configs);
@@ -83,16 +86,16 @@
 		<h3>Quick Start</h3>
 		<div class="quick-buttons">
 			<button class="quick-btn" onclick={() => quickStart('pvp')}>
-				<span class="quick-icon">👤 vs 👤</span>
+				<span class="quick-icon flex items-center gap-2"><UserRound /> vs <UserRound /></span>
 				<span class="quick-label">Player vs Player</span>
 			</button>
 			<button class="quick-btn" onclick={() => quickStart('pvb')}>
-				<span class="quick-icon">👤 vs 🤖</span>
-				<span class="quick-label">Player vs Bot</span>
+				<span class="quick-icon flex items-center gap-2"><UserRound /> vs <Cpu /></span>
+				<span class="quick-label">Player vs Cpu</span>
 			</button>
 			<button class="quick-btn" onclick={() => quickStart('bvb')}>
-				<span class="quick-icon">🤖 vs 🤖</span>
-				<span class="quick-label">Bot vs Bot</span>
+				<span class="quick-icon flex items-center gap-2"><Cpu /> vs <Cpu /></span>
+				<span class="quick-label">Cpu vs Cpu</span>
 			</button>
 		</div>
 	</div>
@@ -153,25 +156,25 @@
 				</div>
 				<div class="player-config-type">
 					<button
-						class="type-btn"
+						class="type-btn flex items-center gap-2"
 						class:active={config.type === 'human'}
 						onclick={() => setPlayerType(i, 'human')}
 					>
-						Human
+						<UserRound size={16} /> Player
 					</button>
 					<button
-						class="type-btn"
+						class="type-btn flex items-center gap-2"
 						class:active={config.type === 'bot'}
 						onclick={() => setPlayerType(i, 'bot')}
 					>
-						Bot
+						<Cpu size={16} /> Cpu
 					</button>
 					<button
-						class="type-btn"
+						class="type-btn flex items-center gap-2"
 						class:active={config.type === 'server'}
 						onclick={() => setPlayerType(i, 'server')}
 					>
-						Server
+						<Server size={16} /> Server
 					</button>
 					{#if config.type === 'bot'}
 						<select
@@ -205,48 +208,48 @@
 						</button>
 					{/if}
 				</div>
-			{#if config.type === 'server'}
-				<div class="server-config">
-					<div class="server-config-header">
-						<button
-							class="server-config-toggle"
-							onclick={() => {
-								showServerConfig.set(i, !(showServerConfig.get(i) ?? false));
-								showServerConfig = new Map(showServerConfig);
-							}}
-						>
-							<span class="server-config-label">Bot Settings</span>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="12"
-								height="12"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								class="chevron"
-								class:expanded={showServerConfig.get(i)}
-							>
-								<path d="m6 9 6 6 6-6" />
-							</svg>
-						</button>
-					</div>
-					{#if showServerConfig.get(i)}
-						<div class="server-config-body">
-							<ServerBotConfig
-								serverUrl={config.serverUrl ?? 'http://localhost:3001'}
-								botParams={config.serverBotParams}
-								onParamsChange={(params) => {
-									playerConfigs[i] = { ...playerConfigs[i], serverBotParams: params };
-									playerConfigs = [...playerConfigs];
+				{#if config.type === 'server'}
+					<div class="server-config">
+						<div class="server-config-header">
+							<button
+								class="server-config-toggle"
+								onclick={() => {
+									showServerConfig.set(i, !(showServerConfig.get(i) ?? false));
+									showServerConfig = new Map(showServerConfig);
 								}}
-							/>
+							>
+								<span class="server-config-label">Bot Settings</span>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="12"
+									height="12"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+									class="chevron"
+									class:expanded={showServerConfig.get(i)}
+								>
+									<path d="m6 9 6 6 6-6" />
+								</svg>
+							</button>
 						</div>
-					{/if}
-				</div>
-			{/if}
+						{#if showServerConfig.get(i)}
+							<div class="server-config-body">
+								<ServerBotConfig
+									serverUrl={config.serverUrl ?? 'http://localhost:3001'}
+									botParams={config.serverBotParams}
+									onParamsChange={(params) => {
+										playerConfigs[i] = { ...playerConfigs[i], serverBotParams: params };
+										playerConfigs = [...playerConfigs];
+									}}
+								/>
+							</div>
+						{/if}
+					</div>
+				{/if}
 			</div>
 		{/each}
 	</div>
