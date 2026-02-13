@@ -65,13 +65,13 @@
 				name: mode === 'bvb' ? 'Bot 1' : 'Player 1',
 				color: PLAYER_COLORS[0].hex,
 				type: mode === 'bvb' ? 'bot' : 'human',
-				botStrategyId: mode === 'bvb' ? 'strong' : null
+				botStrategyId: mode === 'bvb' ? 'hard' : null
 			},
 			{
 				name: mode === 'pvp' ? 'Player 2' : mode === 'pvb' ? 'Bot' : 'Bot 2',
 				color: PLAYER_COLORS[1].hex,
 				type: mode === 'pvp' ? 'human' : 'bot',
-				botStrategyId: mode === 'pvp' ? null : 'strong'
+				botStrategyId: mode === 'pvp' ? null : 'hard'
 			}
 		];
 		onStart(boardSize, configs);
