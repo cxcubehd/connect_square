@@ -74,6 +74,12 @@
 				botStrategyId: mode === 'pvp' ? null : 'hard'
 			}
 		];
+
+		// Randomize which player is first
+		if (Math.random() < 0.5) {
+			configs.reverse();
+		}
+
 		onStart(boardSize, configs);
 	}
 </script>
