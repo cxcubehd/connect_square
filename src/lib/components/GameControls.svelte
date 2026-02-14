@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ChevronDown, ChevronUp, Pencil, RotateCcw } from '@lucide/svelte';
 	import { type GameState } from '$lib/game/state.svelte.js';
 	import { getAvailableBots } from '$lib/game/bot.js';
 	import ServerBotConfig from './ServerBotConfig.svelte';
@@ -14,21 +15,21 @@
 
 <div class="controls" role="region" aria-label="Game controls">
 	<div class="control-group">
-		<md-filled-tonal-button type="button" onclick={() => game.reset()}>
-			<md-icon slot="icon">restart_alt</md-icon>
+		<button type="button" class="action-btn tonal" onclick={() => game.reset()}>
+			<RotateCcw size={15} strokeWidth={2.3} />
 			New Game
-		</md-filled-tonal-button>
+		</button>
 
 		{#if game.phase === 'playing'}
-			<md-outlined-button
+			<button
 				type="button"
-				class="edit-toggle"
+				class="action-btn outlined"
 				class:active={game.editMode}
 				onclick={() => game.toggleEditMode()}
 			>
-				<md-icon slot="icon">edit</md-icon>
+				<Pencil size={15} strokeWidth={2.3} />
 				Edit Mode
-			</md-outlined-button>
+			</button>
 		{:else}
 			<div class="edit-placeholder" aria-hidden="true"></div>
 		{/if}
@@ -54,7 +55,11 @@
 				aria-expanded={showBotAssign}
 			>
 				<span>Assign Bots</span>
-				<md-icon>{showBotAssign ? 'expand_less' : 'expand_more'}</md-icon>
+				{#if showBotAssign}
+					<ChevronUp size={16} strokeWidth={2.3} />
+				{:else}
+					<ChevronDown size={16} strokeWidth={2.3} />
+				{/if}
 			</button>
 
 			{#if showBotAssign}
@@ -107,10 +112,10 @@
 		grid-template-rows: auto auto minmax(0, 1fr);
 		gap: 0.7rem;
 		height: 100%;
-		padding: 0.85rem;
+		padding: 0.86rem;
 		border-radius: 18px;
 		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
-		background: color-mix(in srgb, var(--surface) 95%, transparent);
+		background: color-mix(in srgb, var(--surface) 94%, transparent);
 	}
 
 	.control-group {
@@ -119,10 +124,39 @@
 		gap: 0.5rem;
 	}
 
-	.edit-toggle.active {
-		--md-outlined-button-outline-color: color-mix(in srgb, var(--accent) 54%, transparent);
-		--md-outlined-button-label-text-color: var(--accent);
-		--md-outlined-button-hover-state-layer-color: var(--accent);
+	.action-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		min-height: 42px;
+		padding: 0.42rem 0.78rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+		background: color-mix(in srgb, var(--surface) 94%, transparent);
+		font-size: 0.88rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition:
+			border-color 0.16s ease,
+			background 0.16s ease,
+			color 0.16s ease;
+	}
+
+	.action-btn.tonal {
+		background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+		color: var(--accent);
+		border-color: color-mix(in srgb, var(--accent) 44%, transparent);
+	}
+
+	.action-btn.outlined {
+		background: color-mix(in srgb, var(--surface) 94%, transparent);
+	}
+
+	.action-btn.active {
+		background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+		border-color: color-mix(in srgb, var(--accent) 54%, transparent);
+		color: var(--accent);
 	}
 
 	.edit-placeholder {

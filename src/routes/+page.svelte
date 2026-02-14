@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { BarChart3, Grid3x3, SlidersHorizontal } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 
 	import { GameState } from '$lib/game/state.svelte.js';
@@ -29,8 +30,19 @@
 		return `${game.currentPlayer.name}'s move`;
 	});
 
+	function pageFromIndex(index: number): PlayPage {
+		const safeIndex = Math.min(playPages.length - 1, Math.max(0, index));
+		return playPages[safeIndex];
+	}
+
+	function handlePlayNavActivated(event: Event) {
+		const nextIndex = (event as CustomEvent<{ activeIndex: number }>).detail?.activeIndex;
+		if (typeof nextIndex !== 'number') return;
+		playPage = pageFromIndex(nextIndex);
+	}
+
 	onMount(() => {
-		const mq = window.matchMedia('(min-width: 1020px)');
+		const mq = window.matchMedia('(min-width: 960px)');
 		const apply = () => {
 			isDesktop = mq.matches;
 		};
@@ -51,11 +63,8 @@
 </svelte:head>
 
 <div class="app-shell">
-	<header class="app-bar">
-		<div class="app-title">
-			<p class="app-kicker">Mobile Strategy Arena</p>
-			<h1>Connect, Square!</h1>
-		</div>
+	<header class="top-app-bar">
+		<h1>Connect, Square!</h1>
 		<div class="bar-actions">
 			{#if game.phase !== 'setup'}
 				<p class="turn-chip">Turn {game.moveHistory.length + 1}</p>
@@ -64,7 +73,7 @@
 		</div>
 	</header>
 
-	<main class="app-main">
+	<main class="app-content">
 		{#if game.phase === 'setup'}
 			<section class="setup-stage">
 				<GameSetup onStart={handleStart} />
@@ -98,7 +107,7 @@
 									class:active={playPage === 'score'}
 									onclick={() => (playPage = 'score')}
 								>
-									<md-icon>leaderboard</md-icon>
+									<BarChart3 size={15} strokeWidth={2.3} />
 									Score
 								</button>
 								<button
@@ -107,7 +116,7 @@
 									class:active={playPage === 'actions'}
 									onclick={() => (playPage = 'actions')}
 								>
-									<md-icon>tune</md-icon>
+									<SlidersHorizontal size={15} strokeWidth={2.3} />
 									Actions
 								</button>
 							</div>
@@ -148,18 +157,35 @@
 						</section>
 					{/if}
 
-					<md-navigation-bar class="play-nav" active-index={playPageIndex} hide-inactive-labels>
-						<md-navigation-tab label="Board" onclick={() => (playPage = 'board')}>
-							<md-icon slot="inactive-icon">grid_view</md-icon>
-							<md-icon slot="active-icon">grid_view</md-icon>
+					<md-navigation-bar
+						class="play-nav"
+						active-index={playPageIndex}
+						hide-inactive-labels
+						onnavigation-bar-activated={handlePlayNavActivated}
+					>
+						<md-navigation-tab label="Board">
+							<span slot="inactive-icon">
+								<Grid3x3 size={18} />
+							</span>
+							<span slot="active-icon">
+								<Grid3x3 size={18} />
+							</span>
 						</md-navigation-tab>
-						<md-navigation-tab label="Score" onclick={() => (playPage = 'score')}>
-							<md-icon slot="inactive-icon">leaderboard</md-icon>
-							<md-icon slot="active-icon">leaderboard</md-icon>
+						<md-navigation-tab label="Score">
+							<span slot="inactive-icon">
+								<BarChart3 size={18} />
+							</span>
+							<span slot="active-icon">
+								<BarChart3 size={18} />
+							</span>
 						</md-navigation-tab>
-						<md-navigation-tab label="Actions" onclick={() => (playPage = 'actions')}>
-							<md-icon slot="inactive-icon">tune</md-icon>
-							<md-icon slot="active-icon">tune</md-icon>
+						<md-navigation-tab label="Actions">
+							<span slot="inactive-icon">
+								<SlidersHorizontal size={18} />
+							</span>
+							<span slot="active-icon">
+								<SlidersHorizontal size={18} />
+							</span>
 						</md-navigation-tab>
 					</md-navigation-bar>
 				{/if}
@@ -170,74 +196,64 @@
 
 <style>
 	.app-shell {
-		height: 100dvh;
 		display: grid;
 		grid-template-rows: auto minmax(0, 1fr);
-		overflow: hidden;
+		height: 100dvh;
+		max-width: 1400px;
+		margin: 0 auto;
 	}
 
-	.app-bar {
+	.top-app-bar {
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
-		gap: 0.65rem;
-		padding: calc(0.5rem + env(safe-area-inset-top)) 0.88rem 0.62rem;
-		border-bottom: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
-		background: color-mix(in srgb, var(--bg-app) 90%, transparent);
-		backdrop-filter: blur(10px);
+		justify-content: space-between;
+		gap: 0.7rem;
+		min-height: calc(56px + env(safe-area-inset-top));
+		padding: calc(0.35rem + env(safe-area-inset-top)) 0.88rem 0.35rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+		background: color-mix(in srgb, var(--surface) 92%, transparent);
 	}
 
-	.app-title {
-		min-width: 0;
-	}
-
-	.app-kicker {
+	.top-app-bar h1 {
 		margin: 0;
-		font-size: 0.67rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		color: var(--text-muted);
-	}
-
-	.app-title h1 {
-		margin: 0.1rem 0 0;
-		font-family: var(--font-display);
-		font-size: clamp(1.32rem, 5.5vw, 2rem);
-		line-height: 0.95;
+		font-size: clamp(1.45rem, 4.4vw, 2rem);
+		line-height: 1;
+		font-weight: 600;
+		letter-spacing: 0.01em;
 	}
 
 	.bar-actions {
 		display: flex;
 		align-items: center;
-		gap: 0.46rem;
+		gap: 0.5rem;
 	}
 
 	.turn-chip {
 		margin: 0;
-		padding: 0.36rem 0.68rem;
+		padding: 0.34rem 0.68rem;
 		border-radius: 999px;
-		font-size: 0.74rem;
-		font-weight: 700;
+		font-size: 0.78rem;
+		font-weight: 600;
 		color: var(--text-muted);
-		background: color-mix(in srgb, var(--surface) 95%, transparent);
-		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+		background: color-mix(in srgb, var(--surface) 98%, transparent);
+		border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
 	}
 
-	.app-main {
+	.app-content {
 		min-height: 0;
-		padding: 0.6rem 0.6rem calc(0.52rem + env(safe-area-inset-bottom));
+		padding: 0.5rem;
 	}
 
-	.setup-stage {
+	.setup-stage,
+	.play-stage {
 		height: 100%;
+		min-height: 0;
 	}
 
 	.play-stage {
-		height: 100%;
 		display: grid;
 		grid-template-rows: minmax(0, 1fr) auto;
-		gap: 0.45rem;
+		gap: 0.4rem;
 	}
 
 	.board-page,
@@ -248,7 +264,7 @@
 	.board-page {
 		display: grid;
 		grid-template-rows: auto minmax(0, 1fr);
-		gap: 0.48rem;
+		gap: 0.44rem;
 	}
 
 	.board-header {
@@ -261,46 +277,43 @@
 	.status-pill,
 	.progress-pill {
 		margin: 0;
-		padding: 0.35rem 0.72rem;
+		padding: 0.36rem 0.72rem;
 		border-radius: 999px;
-		font-size: 0.77rem;
-		font-weight: 700;
+		font-size: 0.8rem;
+		font-weight: 600;
 	}
 
 	.status-pill {
 		color: var(--status-color);
-		border: 1px solid color-mix(in srgb, var(--status-color) 45%, transparent);
+		border: 1px solid color-mix(in srgb, var(--status-color) 44%, transparent);
 		background: color-mix(in srgb, var(--status-color) 12%, transparent);
 	}
 
 	.progress-pill {
 		color: var(--text-muted);
-		border: 1px dashed color-mix(in srgb, var(--line-strong) 70%, transparent);
-		background: color-mix(in srgb, var(--surface) 94%, transparent);
+		border: 1px dashed color-mix(in srgb, var(--line-strong) 68%, transparent);
+		background: color-mix(in srgb, var(--surface) 95%, transparent);
 	}
 
 	.board-viewport {
 		min-height: 0;
 		display: grid;
 		place-items: center;
-		padding: 0;
-		background: transparent;
-		border: none;
 	}
 
 	.board-viewport.edit-mode {
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-warm) 52%, transparent);
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-warm) 56%, transparent);
+		border-radius: 12px;
 	}
 
 	.play-nav {
-		border-radius: 14px;
-		overflow: hidden;
-		border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+		border-top: 1px solid color-mix(in srgb, var(--line) 66%, transparent);
+		padding-bottom: env(safe-area-inset-bottom);
 	}
 
 	.desktop-layout {
 		display: grid;
-		grid-template-columns: minmax(0, 1.42fr) minmax(300px, 0.58fr);
+		grid-template-columns: minmax(0, 1fr) minmax(360px, 410px);
 		gap: 0.62rem;
 		height: 100%;
 		min-height: 0;
@@ -321,44 +334,38 @@
 
 	.tab-btn {
 		display: inline-flex;
-		justify-content: center;
 		align-items: center;
-		gap: 0.32rem;
+		justify-content: center;
+		gap: 0.36rem;
 		min-height: 42px;
-		padding: 0.3rem 0.62rem;
+		padding: 0.34rem 0.68rem;
 		border-radius: 12px;
 		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
 		background: color-mix(in srgb, var(--surface) 94%, transparent);
-		font-size: 0.84rem;
+		font-size: 0.88rem;
 		font-weight: 600;
 		cursor: pointer;
 	}
 
-	.tab-btn md-icon {
-		font-size: 1.05rem;
-	}
-
 	.tab-btn.active {
-		border-color: color-mix(in srgb, var(--accent) 60%, transparent);
-		background: color-mix(in srgb, var(--accent) 14%, var(--surface));
 		color: var(--accent);
+		border-color: color-mix(in srgb, var(--accent) 54%, transparent);
+		background: color-mix(in srgb, var(--accent) 12%, var(--surface));
 	}
 
-	.desktop-panel {
+	.desktop-panel,
+	.panel-page {
+		height: 100%;
 		min-height: 0;
 	}
 
-	.panel-page {
-		height: 100%;
-	}
-
-	@media (max-width: 1019px) {
+	@media (max-width: 959px) {
 		.desktop-layout {
 			display: none;
 		}
 	}
 
-	@media (min-width: 1020px) {
+	@media (min-width: 960px) {
 		.play-stage {
 			grid-template-rows: minmax(0, 1fr);
 		}
@@ -367,11 +374,8 @@
 			display: none;
 		}
 
-		.board-viewport {
-			padding: 0.22rem;
-			border-radius: 14px;
-			background: color-mix(in srgb, var(--surface) 90%, transparent);
-			border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+		.app-content {
+			padding: 0.7rem;
 		}
 	}
 </style>

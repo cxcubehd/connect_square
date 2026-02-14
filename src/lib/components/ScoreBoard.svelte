@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Brain, PlayCircle } from '@lucide/svelte';
 	import { type GameState } from '$lib/game/state.svelte.js';
 
 	let { game }: { game: GameState } = $props();
@@ -43,19 +44,17 @@
 		{#if game.phase === 'playing' && game.currentPlayer}
 			<div class="turn-indicator" style:--player-color={game.currentPlayer.color}>
 				{#if game.isBotThinking}
-					<md-icon>psychology</md-icon>
+					<Brain size={15} strokeWidth={2.3} />
 					<span>{game.currentPlayer.name} is thinking...</span>
 				{:else}
-					<md-icon>play_circle</md-icon>
+					<PlayCircle size={15} strokeWidth={2.3} />
 					<span>{game.currentPlayer.name}'s turn</span>
 				{/if}
 			</div>
 		{:else if game.phase === 'finished'}
 			<div class="game-over">
 				{#if game.winner}
-					<span class="winner" style:--winner-color={game.winner.color}
-						>{game.winner.name} wins</span
-					>
+					<span class="winner" style:--winner-color={game.winner.color}>{game.winner.name} wins</span>
 				{:else}
 					<span class="winner">Tie game</span>
 				{/if}
@@ -70,10 +69,10 @@
 		grid-template-rows: auto minmax(0, 1fr) auto;
 		gap: 0.72rem;
 		height: 100%;
-		padding: 0.85rem;
+		padding: 0.86rem;
 		border-radius: 18px;
 		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
-		background: color-mix(in srgb, var(--surface) 95%, transparent);
+		background: color-mix(in srgb, var(--surface) 94%, transparent);
 	}
 
 	.score-header {
@@ -184,10 +183,6 @@
 		color: var(--player-color);
 		border: 1px solid color-mix(in srgb, var(--player-color) 42%, transparent);
 		background: color-mix(in srgb, var(--player-color) 13%, transparent);
-	}
-
-	.turn-indicator md-icon {
-		font-size: 1.1rem;
 	}
 
 	.game-over {

@@ -1,5 +1,16 @@
 <script lang="ts">
-	import { Cpu, Server, UserRound } from '@lucide/svelte';
+	import {
+		ArrowLeft,
+		ArrowRight,
+		Cpu,
+		Grid3x3,
+		Play,
+		Plus,
+		Server,
+		UserRound,
+		Users,
+		Zap
+	} from '@lucide/svelte';
 
 	import type { PlayerConfig } from '$lib/game/types.js';
 	import {
@@ -15,6 +26,10 @@
 
 	const setupPages = ['quick', 'board', 'players'] as const;
 	type SetupPage = (typeof setupPages)[number];
+	const boardSizePresets = Array.from(
+		{ length: MAX_BOARD_SIZE - MIN_BOARD_SIZE + 1 },
+		(_, index) => MIN_BOARD_SIZE + index
+	);
 
 	const bots = getAvailableBots();
 
@@ -28,8 +43,24 @@
 	let boardProgress = $derived(
 		((boardSize - MIN_BOARD_SIZE) / (MAX_BOARD_SIZE - MIN_BOARD_SIZE)) * 100
 	);
+	let boardDensityLabel = $derived.by(() => {
+		if (boardSize <= MIN_BOARD_SIZE + 1) return 'Faster rounds';
+		if (boardSize >= MAX_BOARD_SIZE - 1) return 'More tactical';
+		return 'Balanced pace';
+	});
 	let setupPageIndex = $derived(setupPages.indexOf(setupPage));
 	const usedColors = $derived(playerConfigs.map((p) => p.color));
+
+	function pageFromIndex(index: number): SetupPage {
+		const safeIndex = Math.min(setupPages.length - 1, Math.max(0, index));
+		return setupPages[safeIndex];
+	}
+
+	function handleSetupNavActivated(event: Event) {
+		const nextIndex = (event as CustomEvent<{ activeIndex: number }>).detail?.activeIndex;
+		if (typeof nextIndex !== 'number') return;
+		setupPage = pageFromIndex(nextIndex);
+	}
 
 	function updatePlayer(index: number, patch: Partial<PlayerConfig>) {
 		playerConfigs[index] = { ...playerConfigs[index], ...patch };
@@ -95,19 +126,21 @@
 	}
 
 	function nextSetupPage() {
-		const next = Math.min(setupPages.length - 1, setupPageIndex + 1);
-		setupPage = setupPages[next];
+		setupPage = pageFromIndex(setupPageIndex + 1);
 	}
 
 	function previousSetupPage() {
-		const prev = Math.max(0, setupPageIndex - 1);
-		setupPage = setupPages[prev];
+		setupPage = pageFromIndex(setupPageIndex - 1);
 	}
 
 	function handleBoardSizeInput(event: Event) {
 		const target = event.target as HTMLInputElement;
 		const nextSize = Math.round(Number(target.value));
 		if (Number.isNaN(nextSize)) return;
+		setBoardSize(nextSize);
+	}
+
+	function setBoardSize(nextSize: number) {
 		boardSize = Math.min(MAX_BOARD_SIZE, Math.max(MIN_BOARD_SIZE, nextSize));
 	}
 </script>
@@ -118,25 +151,25 @@
 		<h2>Start a match your way</h2>
 	</header>
 
-	<section class="setup-page" data-page={setupPage}>
+	<section class="setup-content" data-page={setupPage}>
 		{#if setupPage === 'quick'}
 			<div class="quick-page">
 				<button class="quick-option" type="button" onclick={() => quickStart('pvp')}>
-					<span class="quick-icon"><UserRound size={19} /> vs <UserRound size={19} /></span>
+					<span class="quick-icon"><UserRound size={18} /> vs <UserRound size={18} /></span>
 					<span class="quick-copy">
 						<strong>Player vs Player</strong>
 						<small>Pass-and-play battle</small>
 					</span>
 				</button>
 				<button class="quick-option" type="button" onclick={() => quickStart('pvb')}>
-					<span class="quick-icon"><UserRound size={19} /> vs <Cpu size={19} /></span>
+					<span class="quick-icon"><UserRound size={18} /> vs <Cpu size={18} /></span>
 					<span class="quick-copy">
 						<strong>Player vs Bot</strong>
 						<small>Practice against AI</small>
 					</span>
 				</button>
 				<button class="quick-option" type="button" onclick={() => quickStart('bvb')}>
-					<span class="quick-icon"><Cpu size={19} /> vs <Cpu size={19} /></span>
+					<span class="quick-icon"><Cpu size={18} /> vs <Cpu size={18} /></span>
 					<span class="quick-copy">
 						<strong>Bot vs Bot</strong>
 						<small>Watch autonomous play</small>
@@ -146,7 +179,10 @@
 		{:else if setupPage === 'board'}
 			<div class="board-page">
 				<p class="page-label">Board density</p>
-				<p class="board-size">{boardSize} x {boardSize}</p>
+				<div class="board-summary">
+					<p class="board-size">{boardSize} x {boardSize}</p>
+					<p class="board-tone">{boardDensityLabel}</p>
+				</div>
 				<md-slider
 					class="board-slider"
 					min={MIN_BOARD_SIZE}
@@ -156,21 +192,17 @@
 					value={boardSize}
 					oninput={handleBoardSizeInput}
 				></md-slider>
-				<div class="board-stepper">
-					<md-outlined-button
-						type="button"
-						disabled={boardSize <= MIN_BOARD_SIZE}
-						onclick={() => (boardSize = Math.max(MIN_BOARD_SIZE, boardSize - 1))}
-					>
-						Smaller
-					</md-outlined-button>
-					<md-outlined-button
-						type="button"
-						disabled={boardSize >= MAX_BOARD_SIZE}
-						onclick={() => (boardSize = Math.min(MAX_BOARD_SIZE, boardSize + 1))}
-					>
-						Larger
-					</md-outlined-button>
+				<div class="size-presets" role="radiogroup" aria-label="Board size presets">
+					{#each boardSizePresets as size}
+						<button
+							type="button"
+							class="size-preset"
+							class:active={boardSize === size}
+							onclick={() => setBoardSize(size)}
+						>
+							{size} x {size}
+						</button>
+					{/each}
 				</div>
 				<p class="board-hint">
 					{boardSize * boardSize} squares, {(boardSize + 1) * (boardSize + 1)} playable points
@@ -182,18 +214,21 @@
 		{:else}
 			<div class="players-page">
 				<div class="players-header">
-					<p class="page-label">Players</p>
+					<div class="players-header-copy">
+						<p class="page-label">Players</p>
+						<p class="players-count">{playerConfigs.length} configured</p>
+					</div>
 					{#if playerConfigs.length < 4}
-						<md-outlined-button type="button" onclick={addPlayer}>
-							<md-icon slot="icon">person_add</md-icon>
+						<button type="button" class="step-btn outlined add-btn" onclick={addPlayer}>
+							<Plus size={15} strokeWidth={2.3} />
 							Add
-						</md-outlined-button>
+						</button>
 					{/if}
 				</div>
 				<div class="players-scroll">
 					{#each playerConfigs as config, i (i)}
 						<article class="player-card" style:--player-color={config.color}>
-							<div class="player-row">
+							<div class="player-top">
 								<input
 									type="text"
 									class="player-name"
@@ -205,60 +240,67 @@
 									placeholder="Name"
 								/>
 								{#if playerConfigs.length > 2}
-									<md-icon-button
+									<button
 										type="button"
+										class="remove-btn"
 										onclick={() => removePlayer(i)}
 										aria-label="Remove player"
 									>
-										<md-icon>close</md-icon>
-									</md-icon-button>
+										&times;
+									</button>
 								{/if}
 							</div>
 
-							<div class="color-strip" role="radiogroup" aria-label="Player color">
-								{#each PLAYER_COLORS as color}
-									{@const takenByOther = playerConfigs.some(
-										(p, idx) => idx !== i && p.color === color.hex
-									)}
+							<div class="player-section">
+								<p class="player-label">Role</p>
+								<div class="type-row" role="group" aria-label="Player type">
 									<button
 										type="button"
-										class="color-chip"
-										class:selected={config.color === color.hex}
-										style:--chip-color={color.hex}
-										disabled={takenByOther}
-										title={takenByOther ? `${color.name} already used` : color.name}
-										onclick={() => updatePlayer(i, { color: color.hex })}
+										class="type-btn"
+										class:active={config.type === 'human'}
+										onclick={() => setPlayerType(i, 'human')}
 									>
-										<span class="sr-only">{color.name}</span>
+										<UserRound size={14} /> Human
 									</button>
-								{/each}
+									<button
+										type="button"
+										class="type-btn"
+										class:active={config.type === 'bot'}
+										onclick={() => setPlayerType(i, 'bot')}
+									>
+										<Cpu size={14} /> Bot
+									</button>
+									<button
+										type="button"
+										class="type-btn"
+										class:active={config.type === 'server'}
+										onclick={() => setPlayerType(i, 'server')}
+									>
+										<Server size={14} /> Server
+									</button>
+								</div>
 							</div>
 
-							<div class="type-row" role="group" aria-label="Player type">
-								<button
-									type="button"
-									class="type-btn"
-									class:active={config.type === 'human'}
-									onclick={() => setPlayerType(i, 'human')}
-								>
-									<UserRound size={14} /> Human
-								</button>
-								<button
-									type="button"
-									class="type-btn"
-									class:active={config.type === 'bot'}
-									onclick={() => setPlayerType(i, 'bot')}
-								>
-									<Cpu size={14} /> Bot
-								</button>
-								<button
-									type="button"
-									class="type-btn"
-									class:active={config.type === 'server'}
-									onclick={() => setPlayerType(i, 'server')}
-								>
-									<Server size={14} /> Server
-								</button>
+							<div class="player-section">
+								<p class="player-label">Color</p>
+								<div class="color-strip" role="radiogroup" aria-label="Player color">
+									{#each PLAYER_COLORS as color}
+										{@const takenByOther = playerConfigs.some(
+											(p, idx) => idx !== i && p.color === color.hex
+										)}
+										<button
+											type="button"
+											class="color-chip"
+											class:selected={config.color === color.hex}
+											style:--chip-color={color.hex}
+											disabled={takenByOther}
+											title={takenByOther ? `${color.name} already used` : color.name}
+											onclick={() => updatePlayer(i, { color: color.hex })}
+										>
+											<span class="sr-only">{color.name}</span>
+										</button>
+									{/each}
+								</div>
 							</div>
 
 							{#if config.type === 'bot'}
@@ -298,7 +340,9 @@
 										}}
 									>
 										<span>Server bot params</span>
-										<md-icon>{showServerConfig.get(i) ? 'expand_less' : 'expand_more'}</md-icon>
+										<span class="server-chevron" aria-hidden="true"
+											>{showServerConfig.get(i) ? '▴' : '▾'}</span
+										>
 									</button>
 									{#if showServerConfig.get(i)}
 										<div class="server-body">
@@ -319,32 +363,61 @@
 	</section>
 
 	<footer class="setup-footer">
-		<md-text-button type="button" disabled={setupPage === 'quick'} onclick={previousSetupPage}>
-			Back
-		</md-text-button>
-		<div class="footer-actions">
-			<md-outlined-button type="button" onclick={nextSetupPage} disabled={setupPage === 'players'}>
+		<div class="pager-actions">
+			<button
+				type="button"
+				class="step-btn text"
+				disabled={setupPage === 'quick'}
+				onclick={previousSetupPage}
+			>
+				<ArrowLeft size={15} strokeWidth={2.3} />
+				Back
+			</button>
+			<button
+				type="button"
+				class="step-btn outlined"
+				disabled={setupPage === 'players'}
+				onclick={nextSetupPage}
+			>
 				Next
-			</md-outlined-button>
-			<md-filled-button type="button" onclick={startCustomGame}>
-				<md-icon slot="icon">play_arrow</md-icon>
-				Start Game
-			</md-filled-button>
+				<ArrowRight size={15} strokeWidth={2.3} />
+			</button>
 		</div>
+		<button type="button" class="step-btn filled start-btn" onclick={startCustomGame}>
+			<Play size={15} strokeWidth={2.3} />
+			Start Game
+		</button>
 	</footer>
 
-	<md-navigation-bar active-index={setupPageIndex} class="setup-nav" hide-inactive-labels>
-		<md-navigation-tab label="Quick" onclick={() => (setupPage = 'quick')}>
-			<md-icon slot="inactive-icon">flash_on</md-icon>
-			<md-icon slot="active-icon">flash_on</md-icon>
+	<md-navigation-bar
+		active-index={setupPageIndex}
+		class="setup-nav"
+		hide-inactive-labels
+		onnavigation-bar-activated={handleSetupNavActivated}
+	>
+		<md-navigation-tab label="Quick">
+			<span slot="inactive-icon">
+				<Zap size={18} />
+			</span>
+			<span slot="active-icon">
+				<Zap size={18} />
+			</span>
 		</md-navigation-tab>
-		<md-navigation-tab label="Board" onclick={() => (setupPage = 'board')}>
-			<md-icon slot="inactive-icon">grid_view</md-icon>
-			<md-icon slot="active-icon">grid_view</md-icon>
+		<md-navigation-tab label="Board">
+			<span slot="inactive-icon">
+				<Grid3x3 size={18} />
+			</span>
+			<span slot="active-icon">
+				<Grid3x3 size={18} />
+			</span>
 		</md-navigation-tab>
-		<md-navigation-tab label="Players" onclick={() => (setupPage = 'players')}>
-			<md-icon slot="inactive-icon">groups</md-icon>
-			<md-icon slot="active-icon">groups</md-icon>
+		<md-navigation-tab label="Players">
+			<span slot="inactive-icon">
+				<Users size={18} />
+			</span>
+			<span slot="active-icon">
+				<Users size={18} />
+			</span>
 		</md-navigation-tab>
 	</md-navigation-bar>
 </div>
@@ -354,35 +427,33 @@
 		display: grid;
 		grid-template-rows: auto minmax(0, 1fr) auto auto;
 		height: 100%;
-		border-radius: 24px;
-		background: color-mix(in srgb, var(--surface) 96%, transparent);
-		border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
-		overflow: hidden;
+		min-height: 0;
 	}
 
 	.setup-header {
-		padding: 1rem 1rem 0.5rem;
+		padding: 0.62rem 0.82rem 0.32rem;
 	}
 
 	.setup-header h2 {
 		margin: 0;
-		font-family: var(--font-display);
-		font-size: clamp(1.2rem, 4vw, 1.5rem);
-		letter-spacing: 0.01em;
+		font-size: clamp(1.3rem, 3vw, 1.8rem);
+		line-height: 1.15;
+		font-weight: 500;
 	}
 
 	.setup-kicker {
 		margin: 0 0 0.22rem;
-		font-size: 0.72rem;
+		font-size: 0.76rem;
 		font-weight: 700;
-		letter-spacing: 0.08em;
+		letter-spacing: 0.07em;
 		text-transform: uppercase;
 		color: var(--text-muted);
 	}
 
-	.setup-page {
+	.setup-content {
 		min-height: 0;
-		padding: 0.25rem 1rem 0.6rem;
+		overflow: hidden;
+		padding: 0.3rem 0.82rem 0.68rem;
 	}
 
 	.quick-page,
@@ -393,29 +464,31 @@
 
 	.quick-page {
 		display: grid;
-		gap: 0.62rem;
+		align-content: start;
+		gap: 0.72rem;
 	}
 
 	.quick-option {
 		display: grid;
 		grid-template-columns: auto minmax(0, 1fr);
 		align-items: center;
-		gap: 0.62rem;
-		padding: 0.92rem;
-		border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
-		border-radius: 18px;
-		background: color-mix(in srgb, var(--surface-quiet) 90%, transparent);
+		gap: 0.7rem;
+		min-height: 136px;
+		padding: 0.95rem;
+		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+		border-radius: 20px;
+		background: color-mix(in srgb, var(--surface-soft) 86%, transparent);
 		cursor: pointer;
 		text-align: left;
 		transition:
-			transform 0.16s ease,
 			border-color 0.16s ease,
-			background 0.16s ease;
+			background 0.16s ease,
+			transform 0.16s ease;
 	}
 
 	.quick-option:hover {
-		border-color: color-mix(in srgb, var(--accent) 42%, transparent);
-		background: color-mix(in srgb, var(--accent) 8%, var(--surface-quiet));
+		border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+		background: color-mix(in srgb, var(--accent) 8%, var(--surface-soft));
 	}
 
 	.quick-option:active {
@@ -431,104 +504,161 @@
 
 	.quick-copy {
 		display: grid;
-		gap: 0.05rem;
+		gap: 0.06rem;
 	}
 
 	.quick-copy strong {
-		font-size: 0.95rem;
-		font-weight: 700;
+		font-size: 1rem;
+		font-weight: 600;
 	}
 
 	.quick-copy small {
-		font-size: 0.76rem;
+		font-size: 0.82rem;
 		color: var(--text-muted);
 	}
 
 	.board-page {
 		display: grid;
-		align-content: center;
-		gap: 0.58rem;
+		align-content: start;
+		gap: 0.72rem;
+		max-width: 860px;
 	}
 
 	.page-label {
 		margin: 0;
-		font-size: 0.76rem;
+		font-size: 0.8rem;
 		font-weight: 700;
-		letter-spacing: 0.07em;
+		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		color: var(--text-muted);
 	}
 
 	.board-size {
 		margin: 0;
-		font-family: var(--font-display);
-		font-size: clamp(1.8rem, 8vw, 2.3rem);
+		font-size: clamp(2rem, 6vw, 2.8rem);
 		line-height: 1;
+		font-weight: 500;
+	}
+
+	.board-summary {
+		display: flex;
+		align-items: flex-end;
+		gap: 0.8rem;
+		flex-wrap: wrap;
+	}
+
+	.board-tone {
+		margin: 0;
+		padding: 0.26rem 0.62rem;
+		border-radius: 999px;
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--accent);
+		background: color-mix(in srgb, var(--accent) 18%, transparent);
+		border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
 	}
 
 	.board-slider {
 		width: 100%;
 	}
 
-	.board-stepper {
+	.size-presets {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 0.5rem;
+		grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+		gap: 0.48rem;
+	}
+
+	.size-preset {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 34px;
+		padding: 0.34rem 0.66rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+		background: color-mix(in srgb, var(--surface) 94%, transparent);
+		color: var(--text-muted);
+		font-size: 0.78rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition:
+			border-color 0.16s ease,
+			background 0.16s ease,
+			color 0.16s ease;
+	}
+
+	.size-preset.active {
+		color: var(--accent);
+		border-color: color-mix(in srgb, var(--accent) 48%, transparent);
+		background: color-mix(in srgb, var(--accent) 17%, transparent);
 	}
 
 	.board-hint {
 		margin: 0;
-		font-size: 0.82rem;
+		font-size: 0.85rem;
 		color: var(--text-muted);
 	}
 
 	.board-meter {
 		height: 6px;
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--line) 65%, transparent);
+		background: color-mix(in srgb, var(--line) 66%, transparent);
 		overflow: hidden;
 	}
 
 	.board-meter > div {
 		height: 100%;
 		border-radius: inherit;
-		background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 45%, #fff));
+		background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 45%, white));
 		transition: width 0.2s ease;
 	}
 
 	.players-page {
 		display: grid;
 		grid-template-rows: auto minmax(0, 1fr);
-		gap: 0.45rem;
+		gap: 0.55rem;
 	}
 
 	.players-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		gap: 0.5rem;
+		gap: 0.72rem;
+	}
+
+	.players-header-copy {
+		display: grid;
+		gap: 0.08rem;
+	}
+
+	.players-count {
+		margin: 0;
+		font-size: 0.8rem;
+		color: var(--text-muted);
 	}
 
 	.players-scroll {
 		display: grid;
-		gap: 0.56rem;
+		align-content: start;
+		gap: 0.54rem;
 		overflow: auto;
 		padding-right: 0.12rem;
 	}
 
 	.player-card {
 		display: grid;
-		gap: 0.45rem;
-		padding: 0.66rem;
-		border-radius: 16px;
-		border: 1px solid color-mix(in srgb, var(--player-color) 40%, var(--line));
-		background: color-mix(in srgb, var(--player-color) 11%, var(--surface-quiet));
+		grid-template-columns: 1fr;
+		gap: 0.42rem;
+		padding: 0.58rem;
+		border-radius: 18px;
+		border: 1px solid color-mix(in srgb, var(--player-color) 34%, var(--line));
+		background: color-mix(in srgb, var(--player-color) 10%, var(--surface-quiet));
 	}
 
-	.player-row {
+	.player-top {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;
-		gap: 0.3rem;
+		gap: 0.42rem;
 		align-items: center;
 	}
 
@@ -536,52 +666,83 @@
 	.server-url {
 		width: 100%;
 		min-height: 38px;
-		padding: 0.5rem 0.6rem;
+		padding: 0.44rem 0.66rem;
 		border-radius: 10px;
 		border: 1px solid color-mix(in srgb, var(--line) 85%, transparent);
 		background: color-mix(in srgb, var(--surface) 90%, transparent);
 		font-size: 0.9rem;
-		font-weight: 600;
+		font-weight: 500;
+	}
+
+	.remove-btn {
+		width: 30px;
+		height: 30px;
+		border-radius: 50%;
+		border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+		background: color-mix(in srgb, var(--surface) 90%, transparent);
+		color: var(--text-muted);
+		cursor: pointer;
+	}
+
+	.player-section {
+		display: grid;
+		gap: 0.26rem;
+	}
+
+	.player-label {
+		margin: 0;
+		font-size: 0.72rem;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+		font-weight: 700;
 	}
 
 	.color-strip {
-		display: grid;
-		grid-template-columns: repeat(8, minmax(0, 1fr));
-		gap: 0.3rem;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.38rem;
 	}
 
 	.color-chip {
 		display: inline-grid;
 		place-items: center;
-		aspect-ratio: 1;
+		width: 38px;
+		height: 38px;
 		border-radius: 999px;
-		border: 2px solid color-mix(in srgb, var(--line) 80%, transparent);
+		border: 2px solid color-mix(in srgb, var(--line) 72%, transparent);
 		background: var(--chip-color);
 		cursor: pointer;
+		transition:
+			transform 0.14s ease,
+			border-color 0.14s ease;
 	}
 
 	.color-chip.selected {
-		outline: 2px solid color-mix(in srgb, var(--chip-color) 45%, white);
+		transform: scale(1.05);
+		outline: 2px solid color-mix(in srgb, var(--chip-color) 38%, white);
 		outline-offset: 1px;
 	}
 
 	.color-chip:disabled {
-		opacity: 0.3;
+		opacity: 0.32;
 		cursor: not-allowed;
 	}
 
-	.type-row,
-	.bot-row {
-		display: grid;
-		gap: 0.3rem;
-	}
-
 	.type-row {
+		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.28rem;
+		padding: 0.2rem;
+		border-radius: 12px;
+		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+		background: color-mix(in srgb, var(--surface) 95%, transparent);
 	}
 
 	.bot-row {
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.32rem;
 	}
 
 	.type-btn,
@@ -591,19 +752,27 @@
 		align-items: center;
 		gap: 0.22rem;
 		min-height: 34px;
-		padding: 0.28rem 0.42rem;
-		font-size: 0.76rem;
+		padding: 0.26rem 0.46rem;
+		font-size: 0.78rem;
 		font-weight: 600;
 		border-radius: 999px;
-		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
-		background: color-mix(in srgb, var(--surface) 90%, transparent);
+		border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+		background: color-mix(in srgb, var(--surface) 92%, transparent);
 		cursor: pointer;
+	}
+
+	.type-btn {
+		min-width: 0;
+	}
+
+	.bot-pill {
+		flex: 1 1 94px;
 	}
 
 	.type-btn.active,
 	.bot-pill.active {
-		border-color: color-mix(in srgb, var(--player-color) 60%, transparent);
-		background: color-mix(in srgb, var(--player-color) 23%, var(--surface));
+		border-color: color-mix(in srgb, var(--player-color) 62%, transparent);
+		background: color-mix(in srgb, var(--player-color) 24%, var(--surface));
 	}
 
 	.server-settings {
@@ -616,13 +785,17 @@
 		justify-content: space-between;
 		align-items: center;
 		gap: 0.4rem;
-		padding: 0.44rem 0.6rem;
+		padding: 0.44rem 0.62rem;
 		border-radius: 10px;
-		border: 1px dashed color-mix(in srgb, var(--line) 82%, transparent);
-		background: color-mix(in srgb, var(--surface) 92%, transparent);
+		border: 1px dashed color-mix(in srgb, var(--line) 80%, transparent);
+		background: color-mix(in srgb, var(--surface) 94%, transparent);
 		font-size: 0.78rem;
 		font-weight: 600;
 		cursor: pointer;
+	}
+
+	.server-chevron {
+		font-size: 0.86rem;
 	}
 
 	.server-body {
@@ -633,21 +806,66 @@
 	}
 
 	.setup-footer {
-		display: flex;
-		justify-content: space-between;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.6rem;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.35rem 0.75rem 0.5rem;
+		padding: 0.38rem 0.82rem 0.58rem;
 		border-top: 1px solid color-mix(in srgb, var(--line) 62%, transparent);
 	}
 
-	.footer-actions {
+	.pager-actions {
 		display: flex;
-		gap: 0.4rem;
+		gap: 0.46rem;
+	}
+
+	.step-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.34rem;
+		min-height: 42px;
+		padding: 0.44rem 0.96rem;
+		border-radius: 999px;
+		font-size: 0.9rem;
+		font-weight: 500;
+		cursor: pointer;
+		border: 1px solid transparent;
+		background: transparent;
+	}
+
+	.step-btn.text {
+		color: var(--text-muted);
+	}
+
+	.step-btn.outlined {
+		border-color: color-mix(in srgb, var(--line) 78%, transparent);
+		background: color-mix(in srgb, var(--surface) 94%, transparent);
+	}
+
+	.step-btn.filled {
+		background: var(--accent-soft);
+		color: var(--accent);
+	}
+
+	.start-btn {
+		min-width: 152px;
+	}
+
+	.step-btn:disabled {
+		opacity: 0.42;
+		cursor: not-allowed;
+	}
+
+	.add-btn {
+		padding-inline: 0.78rem;
+		min-height: 38px;
+		font-size: 0.8rem;
 	}
 
 	.setup-nav {
 		border-top: 1px solid color-mix(in srgb, var(--line) 62%, transparent);
+		padding-bottom: env(safe-area-inset-bottom);
 	}
 
 	.sr-only {
@@ -661,26 +879,45 @@
 		border: 0;
 	}
 
-	@media (max-width: 419px) {
-		.player-name,
-		.server-url {
-			font-size: 0.82rem;
+	@media (max-width: 560px) {
+		.setup-footer {
+			grid-template-columns: 1fr;
 		}
 
-		.type-btn,
-		.bot-pill {
-			font-size: 0.69rem;
+		.pager-actions {
+			justify-content: space-between;
+		}
+
+		.start-btn {
+			width: 100%;
+		}
+
+		.step-btn {
+			font-size: 0.84rem;
+		}
+	}
+
+	@media (min-width: 760px) {
+		.player-card {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			gap: 0.5rem 0.56rem;
+		}
+
+		.player-top,
+		.bot-row,
+		.server-url,
+		.server-settings {
+			grid-column: 1 / -1;
 		}
 	}
 
 	@media (min-width: 900px) {
-		.setup-shell {
-			max-width: 920px;
-			margin: 0 auto;
-		}
-
 		.quick-page {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+
+		.quick-option {
+			min-height: 180px;
 		}
 	}
 </style>

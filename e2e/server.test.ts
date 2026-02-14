@@ -19,7 +19,7 @@ async function startServerGame(page: Page) {
 
 	const secondPlayer = page.locator('.player-card').nth(1);
 	await secondPlayer.locator('.type-btn', { hasText: 'Server' }).click();
-	await page.locator('.setup-footer md-filled-button').click();
+	await page.locator('.setup-footer .start-btn').click();
 	await expect(page.locator('.board-svg')).toBeVisible();
 }
 
