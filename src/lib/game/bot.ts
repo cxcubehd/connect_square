@@ -56,8 +56,8 @@ export { wasmStrongBot as strongBot };
 const botRegistry = new Map<string, BotStrategy>();
 botRegistry.set(randomBot.id, randomBot);
 botRegistry.set(greedyBot.id, greedyBot);
-botRegistry.set(wasmHardBot.id, wasmHardBot);
 botRegistry.set(wasmStrongBot.id, wasmStrongBot);
+botRegistry.set(wasmHardBot.id, wasmHardBot);
 
 export function getBotStrategy(id: string): BotStrategy | undefined {
 	return botRegistry.get(id);

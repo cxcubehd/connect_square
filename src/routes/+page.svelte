@@ -241,7 +241,6 @@
 
 	.app-content {
 		min-height: 0;
-		padding: 0.5rem;
 	}
 
 	.setup-stage,
@@ -272,6 +271,7 @@
 		justify-content: space-between;
 		align-items: center;
 		gap: 0.44rem;
+		margin: 0.5rem;
 	}
 
 	.status-pill,
@@ -324,6 +324,7 @@
 		grid-template-rows: auto minmax(0, 1fr);
 		gap: 0.55rem;
 		min-height: 0;
+		margin: 0.5rem 0;
 	}
 
 	.desktop-tab-row {
@@ -372,10 +373,6 @@
 
 		.play-nav {
 			display: none;
-		}
-
-		.app-content {
-			padding: 0.7rem;
 		}
 	}
 </style>

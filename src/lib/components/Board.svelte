@@ -652,10 +652,6 @@
 		filter: drop-shadow(0 8px 20px rgb(0 0 0 / 0.12));
 	}
 
-	.board-bg {
-		filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.15));
-	}
-
 	.dot {
 		cursor: pointer;
 		outline: none;
