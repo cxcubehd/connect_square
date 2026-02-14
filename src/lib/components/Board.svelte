@@ -631,21 +631,29 @@
 		width: 100%;
 		max-width: 700px;
 		margin: 0 auto;
-		padding: 0;
+		padding: 0.2rem;
+		border-radius: 1rem;
+		background:
+			radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--accent-sun) 20%, transparent), transparent 52%),
+			linear-gradient(150deg, color-mix(in srgb, var(--surface) 95%, transparent), color-mix(in srgb, var(--surface-soft) 95%, transparent));
+		border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
+		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.45);
 	}
 
 	.board-svg {
 		width: 100%;
 		height: auto;
+		border-radius: 0.85rem;
 		user-select: none;
 		-webkit-user-select: none;
 		touch-action: none;
 		-webkit-touch-callout: none;
 		-webkit-tap-highlight-color: transparent;
+		filter: drop-shadow(0 10px 20px rgb(0 0 0 / 0.14));
 	}
 
 	.board-bg {
-		filter: url(#pencil-texture);
+		filter: url(#pencil-texture) drop-shadow(0 1px 0 rgb(255 255 255 / 0.25));
 	}
 
 	.dot {
@@ -655,7 +663,8 @@
 		transition:
 			r 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
 			fill 0.2s ease,
-			opacity 0.2s ease;
+			opacity 0.2s ease,
+			filter 0.2s ease;
 	}
 
 	.dot:focus {
@@ -673,27 +682,27 @@
 	@media (hover: hover) and (pointer: fine) {
 		.dot:hover {
 			r: 5.5;
-			opacity: 0.9;
+			opacity: 0.92;
 		}
 	}
 
 	.dot-hovered {
 		r: 5;
-		opacity: 0.85;
+		opacity: 0.9;
 	}
 
 	.dot-selected {
-		filter: drop-shadow(0 0 4px currentColor);
+		filter: drop-shadow(0 0 5px currentColor);
 		animation: pulse 0.8s ease-in-out infinite alternate;
 	}
 
 	.dot-drag-origin {
-		filter: drop-shadow(0 0 5px currentColor);
+		filter: drop-shadow(0 0 6px currentColor);
 		animation: pulse 0.6s ease-in-out infinite alternate;
 	}
 
 	.dot-drag-target {
-		filter: drop-shadow(0 0 4px currentColor);
+		filter: drop-shadow(0 0 7px currentColor);
 		animation: glow 0.8s ease-in-out infinite alternate;
 		r: 6;
 	}
@@ -721,10 +730,12 @@
 
 	.last-move-line {
 		opacity: 0.95;
+		stroke-width: 3;
 	}
 
 	.filled-square {
 		opacity: 1;
+		filter: saturate(1.05);
 	}
 
 	.newly-captured {
@@ -737,13 +748,13 @@
 	}
 
 	.win-highlight {
-		stroke: white;
+		stroke: color-mix(in srgb, #fff 85%, var(--accent-sun));
 		animation: win-wave 0.6s ease-in-out both;
 		animation-delay: var(--win-delay, 0ms);
 	}
 
 	.survivor-win-highlight {
-		stroke: white;
+		stroke: color-mix(in srgb, #fff 85%, var(--accent-sun));
 		animation:
 			survivor-fill 0.4s ease-out both,
 			win-wave 0.6s ease-in-out both;
@@ -774,7 +785,7 @@
 			r: 5;
 		}
 		to {
-			r: 7;
+			r: 7.3;
 		}
 	}
 
@@ -802,10 +813,12 @@
 		0% {
 			opacity: 0;
 			clip-path: inset(50% round 28px);
+			filter: saturate(0.7);
 		}
 		100% {
 			opacity: 1;
 			clip-path: inset(0% round 3px);
+			filter: saturate(1.05);
 		}
 	}
 
@@ -813,10 +826,12 @@
 		0% {
 			opacity: 0;
 			clip-path: inset(50% round 28px);
+			filter: saturate(0.7);
 		}
 		100% {
 			opacity: 1;
 			clip-path: inset(0% round 3px);
+			filter: saturate(1.05);
 		}
 	}
 
@@ -880,7 +895,7 @@
 			r: 4.5;
 		}
 		50% {
-			r: 5;
+			r: 5.2;
 		}
 		100% {
 			r: 4.5;

@@ -8,9 +8,22 @@
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
 	const game = new GameState();
+	let progressPercent = $derived(
+		game.totalSquares === 0 ? 0 : Math.round((game.capturedCount / game.totalSquares) * 100)
+	);
+
+	let activePanel: 'score' | 'controls' = $state('score');
+	let scorePanel: HTMLElement | undefined = $state(undefined);
+	let controlsPanel: HTMLElement | undefined = $state(undefined);
 
 	function handleStart(boardSize: number, players: PlayerConfig[]) {
 		game.startGame(boardSize, players);
+	}
+
+	function focusPanel(panel: 'score' | 'controls') {
+		activePanel = panel;
+		const target = panel === 'score' ? scorePanel : controlsPanel;
+		target?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 	}
 </script>
 
@@ -19,213 +32,336 @@
 	<meta name="description" content="A strategy board game of territory and connections" />
 </svelte:head>
 
-<div class="app">
-	<header class="app-header">
-		<div class="header-left">
-			{#if game.phase !== 'setup'}
-				<h1 class="header-title">Connect, Square!</h1>
-			{/if}
+<div class="native-app">
+	<header class="native-header">
+		<div class="title-wrap">
+			<p class="title-kicker">Mobile Strategy Arena</p>
+			<h1 class="title-main">Connect, Square!</h1>
 		</div>
-		<div class="header-right">
+		<div class="header-actions">
+			{#if game.phase !== 'setup'}
+				<p class="turn-chip">Turn {game.moveHistory.length + 1}</p>
+			{/if}
 			<ThemeToggle />
 		</div>
 	</header>
 
-	<main class="app-main">
+	<main class="native-main">
 		{#if game.phase === 'setup'}
-			<div class="setup-view">
+			<section class="setup-stage">
 				<GameSetup onStart={handleStart} />
-			</div>
+			</section>
 		{:else}
-			<div class="game-view">
-				<aside class="sidebar sidebar-left">
-					<ScoreBoard {game} />
-				</aside>
-
-				<div class="board-area">
-					<Board {game} />
+			<section class="play-stage">
+				<div class="board-column">
+					<div class="board-shell">
+						<div class="board-toolbar">
+							{#if game.phase === 'finished' && game.winner}
+								<p class="status-pill" style:--pill-color={game.winner.color}>
+									{game.winner.name} wins
+								</p>
+							{:else if game.phase === 'finished'}
+								<p class="status-pill neutral">Round finished</p>
+							{:else if game.currentPlayer}
+								<p class="status-pill" style:--pill-color={game.currentPlayer.color}>
+									{#if game.isBotThinking}
+										{game.currentPlayer.name} is planning
+									{:else}
+										{game.currentPlayer.name}'s move
+									{/if}
+								</p>
+							{/if}
+							<p class="progress-pill">{game.capturedCount}/{game.totalSquares} • {progressPercent}%</p>
+						</div>
+						<Board {game} />
+					</div>
 					{#if game.editMode}
-						<div class="edit-banner">Edit Mode Active</div>
+						<div class="edit-alert">Edit Mode Active</div>
 					{/if}
 				</div>
 
-				<aside class="sidebar sidebar-right">
+				<div class="mobile-hub" role="navigation" aria-label="Game panels">
+					<div class="panel-switch">
+						<button
+							type="button"
+							class="switch-btn"
+							class:active={activePanel === 'score'}
+							onclick={() => focusPanel('score')}
+						>
+							Score
+						</button>
+						<button
+							type="button"
+							class="switch-btn"
+							class:active={activePanel === 'controls'}
+							onclick={() => focusPanel('controls')}
+						>
+							Actions
+						</button>
+					</div>
+
+					<div class="panel-stack">
+						<div bind:this={scorePanel} class="panel-slot" class:focus={activePanel === 'score'}>
+							<ScoreBoard {game} />
+						</div>
+						<div bind:this={controlsPanel} class="panel-slot" class:focus={activePanel === 'controls'}>
+							<GameControls {game} />
+						</div>
+					</div>
+				</div>
+
+				<div class="desktop-hub">
+					<ScoreBoard {game} />
 					<GameControls {game} />
-				</aside>
-			</div>
+				</div>
+			</section>
 		{/if}
 	</main>
 </div>
 
 <style>
-	.app {
+	.native-app {
 		min-height: 100dvh;
+		max-width: 1180px;
+		margin: 0 auto;
 		display: flex;
 		flex-direction: column;
-		overflow-x: hidden;
 	}
 
-	.app-header {
+	.native-header {
+		position: sticky;
+		top: 0;
+		z-index: 30;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 0.5rem 1rem;
-		border-bottom: 1px solid var(--border-color);
-		background: var(--panel-bg);
-		flex-shrink: 0;
-		min-height: 48px;
-	}
-
-	.header-title {
-		font-family: var(--font-display);
-		font-size: 1.25rem;
-		font-weight: 700;
-		margin: 0;
-		color: var(--text-primary);
-	}
-
-	.header-left,
-	.header-right {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.app-main {
-		flex: 1;
-		display: flex;
-		justify-content: center;
-		padding: 0.5rem;
-	}
-
-	.setup-view {
-		display: flex;
-		align-items: flex-start;
-		justify-content: center;
-		width: 100%;
-		padding: 0.5rem 0;
-	}
-
-	.game-view {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
 		gap: 0.75rem;
-		width: 100%;
-		max-width: 1200px;
+		padding: 0.88rem 0.88rem 0.78rem;
+		background: color-mix(in srgb, var(--bg-app) 82%, transparent);
+		backdrop-filter: blur(10px);
+		border-bottom: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
 	}
 
-	.sidebar {
-		width: 100%;
-		max-width: 100%;
+	.title-wrap {
+		min-width: 0;
 	}
 
-	.sidebar-left {
-		order: 0;
+	.title-kicker {
+		margin: 0;
+		font-size: 0.66rem;
+		letter-spacing: 0.11em;
+		font-weight: 800;
+		color: var(--text-muted);
+		text-transform: uppercase;
 	}
 
-	.board-area {
-		order: 1;
-		width: 100%;
-		max-width: 100%;
+	.title-main {
+		margin: 0.08rem 0 0;
+		font-size: clamp(1.45rem, 4.8vw, 2rem);
+		line-height: 0.9;
+		font-weight: 800;
+		color: var(--text-main);
+	}
+
+	.header-actions {
 		display: flex;
-		flex-direction: column;
 		align-items: center;
+		gap: 0.48rem;
+	}
+
+	.turn-chip {
+		margin: 0;
+		padding: 0.42rem 0.7rem;
+		border-radius: 999px;
+		background: var(--surface);
+		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+		font-size: 0.74rem;
+		font-weight: 800;
+		color: var(--text-muted);
+		white-space: nowrap;
+	}
+
+	.native-main {
+		flex: 1;
+		padding: 0.7rem 0.7rem calc(1rem + env(safe-area-inset-bottom));
+	}
+
+	.setup-stage {
+		max-width: 760px;
+		margin: 0 auto;
+	}
+
+	.play-stage {
+		display: grid;
+		gap: 0.8rem;
+		max-width: 1120px;
+		margin: 0 auto;
+	}
+
+	.board-column {
+		display: grid;
 		gap: 0.5rem;
-		flex-shrink: 0;
 	}
 
-	.sidebar-right {
-		order: 2;
+	.board-shell {
+		padding: 0.62rem;
+		border-radius: 1.1rem;
+		background: color-mix(in srgb, var(--surface) 95%, transparent);
+		border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+		box-shadow: var(--shadow-soft);
 	}
 
-	.edit-banner {
-		padding: 0.4rem 1rem;
-		background: var(--accent-color);
+	.board-toolbar {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.45rem;
+		margin-bottom: 0.54rem;
+		flex-wrap: wrap;
+	}
+
+	.status-pill,
+	.progress-pill {
+		margin: 0;
+		padding: 0.33rem 0.72rem;
+		border-radius: 999px;
+		font-size: 0.76rem;
+		font-weight: 800;
+	}
+
+	.status-pill {
+		--pill-color: var(--accent);
+		color: var(--pill-color);
+		background: color-mix(in srgb, var(--pill-color) 14%, transparent);
+		border: 1px solid color-mix(in srgb, var(--pill-color) 40%, transparent);
+	}
+
+	.status-pill.neutral {
+		color: var(--text-muted);
+		background: var(--surface-quiet);
+		border-color: color-mix(in srgb, var(--line) 84%, transparent);
+	}
+
+	.progress-pill {
+		color: var(--text-muted);
+		background: var(--surface-quiet);
+		border: 1px dashed color-mix(in srgb, var(--line-strong) 74%, transparent);
+	}
+
+	.edit-alert {
+		padding: 0.5rem 0.78rem;
+		font-size: 0.78rem;
+		font-weight: 800;
 		color: white;
-		border-radius: 6px;
-		font-size: 0.8rem;
-		font-weight: 600;
-		letter-spacing: 0.03em;
-		animation: pulse-bg 1.5s ease-in-out infinite alternate;
+		border-radius: 0.75rem;
+		background: linear-gradient(135deg, var(--accent-warm), #ff5f5f);
+		box-shadow: 0 12px 26px rgb(242 78 99 / 0.3);
 	}
 
-	@keyframes pulse-bg {
-		from {
-			opacity: 0.8;
+	.mobile-hub {
+		display: grid;
+		gap: 0.52rem;
+	}
+
+	.panel-switch {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.4rem;
+		padding: 0.38rem;
+		border-radius: 0.9rem;
+		background: color-mix(in srgb, var(--surface) 88%, transparent);
+		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+	}
+
+	.switch-btn {
+		appearance: none;
+		border: none;
+		border-radius: 0.65rem;
+		padding: 0.55rem 0.7rem;
+		font-size: 0.84rem;
+		font-weight: 800;
+		color: var(--text-muted);
+		background: transparent;
+		cursor: pointer;
+		transition:
+			background 0.18s ease,
+			color 0.18s ease,
+			transform 0.18s ease;
+		min-height: 44px;
+	}
+
+	.switch-btn.active {
+		background: var(--surface);
+		color: var(--text-main);
+		box-shadow: 0 4px 14px rgb(38 61 110 / 0.14);
+	}
+
+	.switch-btn:active {
+		transform: scale(0.98);
+	}
+
+	.panel-stack {
+		display: grid;
+		gap: 0.68rem;
+	}
+
+	.panel-slot {
+		scroll-margin-top: 6.2rem;
+	}
+
+	.panel-slot.focus {
+		animation: soft-highlight 0.45s ease;
+	}
+
+	@keyframes soft-highlight {
+		0% {
+			transform: translateY(0);
 		}
-		to {
-			opacity: 1;
+		40% {
+			transform: translateY(-2px);
+		}
+		100% {
+			transform: translateY(0);
 		}
 	}
 
-	@media (min-width: 640px) {
-		.app-header {
-			padding: 0.5rem 1.25rem;
+	.desktop-hub {
+		display: none;
+	}
+
+	@media (min-width: 760px) {
+		.native-main {
+			padding: 0.95rem 1rem calc(1.2rem + env(safe-area-inset-bottom));
 		}
 
-		.app-main {
-			padding: 0.75rem;
-		}
-
-		.setup-view {
-			padding: 1rem 0.5rem;
-			align-items: center;
-		}
-
-		.game-view {
-			gap: 1rem;
-		}
-
-		.board-area {
-			max-width: 560px;
+		.native-header {
+			padding-inline: 1rem;
 		}
 	}
 
-	@media (min-width: 900px) {
-		.app-header {
-			padding: 0.75rem 1.5rem;
+	@media (min-width: 1020px) {
+		.native-header {
+			padding-inline: 1.2rem;
 		}
 
-		.header-title {
-			font-size: 1.5rem;
+		.native-main {
+			padding-inline: 1.2rem;
 		}
 
-		.app-main {
-			padding: 1rem;
+		.play-stage {
+			grid-template-columns: minmax(0, 1.33fr) minmax(290px, 0.67fr);
+			align-items: start;
 		}
 
-		.setup-view {
-			padding: 2rem 1rem;
+		.mobile-hub {
+			display: none;
 		}
 
-		.game-view {
-			flex-direction: row;
-			align-items: flex-start;
-			gap: 1.5rem;
-		}
-
-		.sidebar {
-			flex-shrink: 0;
+		.desktop-hub {
+			display: grid;
+			gap: 0.72rem;
 			position: sticky;
-			top: 1rem;
-			width: auto;
-			max-width: none;
-			min-width: 200px;
-		}
-
-		.sidebar-left {
-			order: 0;
-		}
-
-		.board-area {
-			order: 1;
-			flex: 1;
-			max-width: 700px;
-		}
-
-		.sidebar-right {
-			order: 2;
+			top: 5.2rem;
 		}
 	}
 </style>

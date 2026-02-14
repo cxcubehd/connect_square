@@ -14,14 +14,16 @@
 				class:eliminated={player.eliminated}
 				style:--player-color={player.color}
 			>
-				<div class="player-indicator" class:thinking={isCurrent && game.isBotThinking}>
-					<div class="color-dot"></div>
+				<div class="player-ident" class:thinking={isCurrent && game.isBotThinking}>
+					<span class="color-dot"></span>
 					<span class="player-name">{player.name}</span>
 					{#if player.type === 'bot'}
 						<span class="bot-badge">BOT</span>
+					{:else if player.type === 'server'}
+						<span class="bot-badge">SERVER</span>
 					{/if}
 					{#if player.eliminated}
-						<span class="eliminated-badge">OUT</span>
+						<span class="out-badge">OUT</span>
 					{/if}
 				</div>
 				<div class="score-value">{score}</div>
@@ -36,14 +38,14 @@
 					<span class="thinking-text">Thinking...</span>
 				{:else if game.currentPlayer.type === 'human'}
 					<span>{game.currentPlayer.name}'s turn</span>
+				{:else}
+					<span>{game.currentPlayer.name} is moving</span>
 				{/if}
 			</div>
 		{:else if game.phase === 'finished'}
 			<div class="game-over">
 				{#if game.winner}
-					<span class="winner-text" style:color={game.winner.color}>
-						{game.winner.name} wins!
-					</span>
+					<span class="winner-text" style:--winner={game.winner.color}>{game.winner.name} wins!</span>
 				{:else}
 					<span class="winner-text">It's a tie!</span>
 				{/if}
@@ -54,56 +56,45 @@
 
 <style>
 	.scoreboard {
-		display: flex;
-		flex-direction: column;
-		gap: 0.35rem;
-		padding: 0.6rem;
-		background: var(--panel-bg);
-		border-radius: 10px;
-		border: 1px solid var(--border-color);
-		width: 100%;
+		display: grid;
+		gap: 0.58rem;
+		padding: 0.78rem;
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--surface) 95%, transparent);
+		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+		box-shadow: var(--shadow-soft);
 	}
 
 	.player-scores {
-		display: flex;
-		gap: 0.35rem;
-		overflow-x: auto;
-		scrollbar-width: none;
-		-webkit-overflow-scrolling: touch;
-	}
-
-	.player-scores::-webkit-scrollbar {
-		display: none;
+		display: grid;
+		gap: 0.44rem;
 	}
 
 	.player-score {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 0.4rem 0.6rem;
-		border-radius: 8px;
-		transition: all 0.2s ease;
-		border: 2px solid transparent;
-		flex: 1;
-		min-width: 0;
-		gap: 0.4rem;
+		gap: 0.55rem;
+		padding: 0.52rem 0.6rem;
+		border-radius: 0.84rem;
+		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+		background: color-mix(in srgb, var(--surface-quiet) 95%, transparent);
 	}
 
 	.player-score.active {
-		border-color: var(--player-color);
-		background: color-mix(in srgb, var(--player-color) 8%, transparent);
+		border-color: color-mix(in srgb, var(--player-color) 56%, transparent);
+		background: color-mix(in srgb, var(--player-color) 12%, var(--surface));
 	}
 
 	.player-score.eliminated {
-		opacity: 0.4;
+		opacity: 0.45;
 	}
 
-	.player-indicator {
+	.player-ident {
 		display: flex;
 		align-items: center;
-		gap: 0.35rem;
+		gap: 0.34rem;
 		min-width: 0;
-		overflow: hidden;
 	}
 
 	.color-dot {
@@ -111,152 +102,88 @@
 		height: 10px;
 		border-radius: 50%;
 		background: var(--player-color);
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--player-color) 24%, transparent);
 		flex-shrink: 0;
 	}
 
-	.thinking .color-dot {
-		animation: think-pulse 0.8s ease-in-out infinite alternate;
-	}
-
 	.player-name {
-		font-weight: 500;
-		font-size: 0.8rem;
-		color: var(--text-primary);
+		font-size: 0.84rem;
+		font-weight: 800;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 
-	.bot-badge {
-		font-size: 0.55rem;
-		font-weight: 700;
-		padding: 1px 3px;
-		border-radius: 3px;
-		background: var(--player-color);
+	.bot-badge,
+	.out-badge {
+		padding: 0.1rem 0.35rem;
+		border-radius: 999px;
+		font-size: 0.58rem;
+		font-weight: 900;
+		letter-spacing: 0.06em;
 		color: white;
-		letter-spacing: 0.05em;
 		flex-shrink: 0;
 	}
 
-	.eliminated-badge {
-		font-size: 0.55rem;
-		font-weight: 700;
-		padding: 1px 3px;
-		border-radius: 3px;
-		background: var(--text-muted);
-		color: white;
-		letter-spacing: 0.05em;
-		flex-shrink: 0;
+	.bot-badge {
+		background: color-mix(in srgb, var(--player-color) 76%, #1f2942);
+	}
+
+	.out-badge {
+		background: var(--danger);
 	}
 
 	.score-value {
-		font-size: 1.2rem;
-		font-weight: 700;
-		color: var(--player-color);
-		min-width: 1.5rem;
-		text-align: right;
+		font-size: 1.35rem;
+		font-weight: 900;
 		font-variant-numeric: tabular-nums;
-		flex-shrink: 0;
-	}
-
-	.turn-indicator {
-		text-align: center;
-		padding: 0.3rem 0.5rem;
 		color: var(--player-color);
-		font-weight: 500;
-		font-size: 0.8rem;
+		min-width: 1.6rem;
+		text-align: right;
 	}
 
 	.status-section {
-		min-height: 2rem;
-		border-top: 1px solid var(--border-color);
-		padding-top: 0.4rem;
+		border-top: 1px dashed color-mix(in srgb, var(--line) 86%, transparent);
+		padding-top: 0.5rem;
+		min-height: 2.2rem;
+	}
+
+	.turn-indicator {
+		border-radius: 999px;
+		padding: 0.34rem 0.7rem;
+		text-align: center;
+		font-size: 0.8rem;
+		font-weight: 800;
+		color: var(--player-color);
+		background: color-mix(in srgb, var(--player-color) 14%, transparent);
+		border: 1px solid color-mix(in srgb, var(--player-color) 42%, transparent);
+	}
+
+	.thinking {
+		animation: soft-pulse 0.8s ease-in-out infinite alternate;
 	}
 
 	.thinking-text {
-		animation: think-pulse 0.8s ease-in-out infinite alternate;
+		animation: soft-pulse 0.8s ease-in-out infinite alternate;
 	}
 
 	.game-over {
 		text-align: center;
-		padding: 0.3rem 0.5rem;
 	}
 
 	.winner-text {
-		font-size: 1.1rem;
-		font-weight: 700;
+		font-family: var(--font-display);
+		font-size: 1.3rem;
+		line-height: 0.9;
+		color: var(--winner, var(--text-main));
 	}
 
-	@keyframes think-pulse {
+	@keyframes soft-pulse {
 		from {
-			opacity: 0.4;
+			opacity: 0.45;
 		}
 		to {
 			opacity: 1;
-		}
-	}
-
-	@media (min-width: 900px) {
-		.scoreboard {
-			padding: 1rem;
-			border-radius: 12px;
-			min-width: 200px;
-			width: auto;
-		}
-
-		.player-scores {
-			flex-direction: column;
-			gap: 0.5rem;
-			overflow-x: visible;
-		}
-
-		.player-score {
-			padding: 0.5rem 0.75rem;
-			flex: unset;
-		}
-
-		.player-indicator {
-			gap: 0.5rem;
-		}
-
-		.color-dot {
-			width: 12px;
-			height: 12px;
-		}
-
-		.player-name {
-			font-size: 0.875rem;
-		}
-
-		.bot-badge,
-		.eliminated-badge {
-			font-size: 0.6rem;
-			padding: 1px 4px;
-			border-radius: 4px;
-		}
-
-		.score-value {
-			font-size: 1.5rem;
-			min-width: 2rem;
-		}
-
-		.turn-indicator {
-			padding: 0.5rem;
-			font-size: 0.875rem;
-		}
-
-		.status-section {
-			min-height: 2.5rem;
-			padding-top: 0.75rem;
-			margin-top: 0.25rem;
-		}
-
-		.game-over {
-			padding: 0.5rem;
-		}
-
-		.winner-text {
-			font-size: 1.25rem;
 		}
 	}
 </style>

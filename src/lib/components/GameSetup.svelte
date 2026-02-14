@@ -14,6 +14,9 @@
 	let { onStart }: { onStart: (boardSize: number, players: PlayerConfig[]) => void } = $props();
 
 	let boardSize = $state(DEFAULT_BOARD_SIZE);
+	let boardProgress = $derived(
+		((boardSize - MIN_BOARD_SIZE) / (MAX_BOARD_SIZE - MIN_BOARD_SIZE)) * 100
+	);
 	let playerConfigs: PlayerConfig[] = $state([
 		{ name: 'Player 1', color: PLAYER_COLORS[0].hex, type: 'human', botStrategyId: null },
 		{ name: 'Player 2', color: PLAYER_COLORS[1].hex, type: 'human', botStrategyId: null }
@@ -21,8 +24,12 @@
 
 	const bots = getAvailableBots();
 	const usedColors = $derived(playerConfigs.map((p) => p.color));
-
 	let showServerConfig: Map<number, boolean> = $state(new Map());
+
+	function updatePlayer(index: number, patch: Partial<PlayerConfig>) {
+		playerConfigs[index] = { ...playerConfigs[index], ...patch };
+		playerConfigs = [...playerConfigs];
+	}
 
 	function addPlayer() {
 		if (playerConfigs.length >= 4) return;
@@ -44,15 +51,13 @@
 	}
 
 	function setPlayerType(index: number, type: 'human' | 'bot' | 'server') {
-		playerConfigs[index] = {
-			...playerConfigs[index],
+		updatePlayer(index, {
 			type,
-			botStrategyId: type === 'bot' ? (bots.at(-1)?.id ?? 'random') : null,
+			botStrategyId: type === 'bot' ? (playerConfigs[index].botStrategyId ?? bots.at(-1)?.id ?? 'random') : null,
 			serverUrl:
 				type === 'server' ? (playerConfigs[index].serverUrl ?? 'http://localhost:3001') : undefined,
 			serverBotParams: type === 'server' ? playerConfigs[index].serverBotParams : undefined
-		};
-		playerConfigs = [...playerConfigs];
+		});
 	}
 
 	function handleStart() {
@@ -75,7 +80,6 @@
 			}
 		];
 
-		// Randomize which player is first
 		if (Math.random() < 0.5) {
 			configs.reverse();
 		}
@@ -84,49 +88,78 @@
 	}
 </script>
 
-<div class="setup-panel">
-	<h1 class="game-title">Connect, Square!</h1>
-	<p class="game-subtitle">A Game of Territory and Connections</p>
+<div class="setup-root">
+	<section class="hero-card">
+		<h2 class="hero-title">Pick Your Matchup</h2>
+		<p class="hero-subtitle">A game of territory and connections</p>
+	</section>
 
-	<div class="quick-start">
-		<h3>Quick Start</h3>
-		<div class="quick-buttons">
+	<section class="quick-card">
+		<div class="section-head">
+			<h3>Quick Start</h3>
+			<span>Jump in instantly</span>
+		</div>
+		<div class="quick-list">
 			<button class="quick-btn" onclick={() => quickStart('pvp')}>
-				<span class="quick-icon flex items-center gap-2"><UserRound /> vs <UserRound /></span>
-				<span class="quick-label">Player vs Player</span>
+				<span class="quick-icon"><UserRound size={20} /> vs <UserRound size={20} /></span>
+				<span class="quick-text">
+					<strong>Player vs Player</strong>
+					<small>Pass and play</small>
+				</span>
 			</button>
 			<button class="quick-btn" onclick={() => quickStart('pvb')}>
-				<span class="quick-icon flex items-center gap-2"><UserRound /> vs <Cpu /></span>
-				<span class="quick-label">Player vs Cpu</span>
+				<span class="quick-icon"><UserRound size={20} /> vs <Cpu size={20} /></span>
+				<span class="quick-text">
+					<strong>Player vs Bot</strong>
+					<small>Train your tactics</small>
+				</span>
 			</button>
 			<button class="quick-btn" onclick={() => quickStart('bvb')}>
-				<span class="quick-icon flex items-center gap-2"><Cpu /> vs <Cpu /></span>
-				<span class="quick-label">Cpu vs Cpu</span>
+				<span class="quick-icon"><Cpu size={20} /> vs <Cpu size={20} /></span>
+				<span class="quick-text">
+					<strong>Bot vs Bot</strong>
+					<small>Watch and learn</small>
+				</span>
 			</button>
 		</div>
-	</div>
+	</section>
 
-	<div class="divider">
-		<span>or customize</span>
-	</div>
+	<div class="divider">or customize</div>
 
-	<div class="config-section">
-		<label class="config-label">
-			Board Size: {boardSize} x {boardSize}
+	<section class="native-card board-card">
+		<div class="card-title-row">
+			<h3>Board Size: {boardSize} x {boardSize}</h3>
+			<div class="stepper" aria-label="Board size stepper">
+				<button
+					type="button"
+					disabled={boardSize <= MIN_BOARD_SIZE}
+					onclick={() => (boardSize = Math.max(MIN_BOARD_SIZE, boardSize - 1))}
+				>
+					−
+				</button>
+				<button
+					type="button"
+					disabled={boardSize >= MAX_BOARD_SIZE}
+					onclick={() => (boardSize = Math.min(MAX_BOARD_SIZE, boardSize + 1))}
+				>
+					+
+				</button>
+			</div>
+		</div>
+		<div class="slider-wrap" style:--slider-progress="{boardProgress}%">
 			<input
 				type="range"
+				class="board-slider"
 				min={MIN_BOARD_SIZE}
 				max={MAX_BOARD_SIZE}
 				bind:value={boardSize}
-				class="board-slider"
+				aria-label="Board size"
 			/>
-			<span class="size-hint"
-				>{boardSize * boardSize} squares, {(boardSize + 1) * (boardSize + 1)} points</span
-			>
-		</label>
-	</div>
+		</div>
+		<p class="size-hint">{boardSize * boardSize} squares, {(boardSize + 1) * (boardSize + 1)} points</p>
+	</section>
 
-	<div class="config-section">
+	<section class="native-card players-card">
 		<div class="players-header">
 			<h3>Players</h3>
 			{#if playerConfigs.length < 4}
@@ -134,101 +167,105 @@
 			{/if}
 		</div>
 
-		{#each playerConfigs as config, i (i)}
-			<div class="player-config">
-				<div class="player-config-main">
-					<input
-						type="text"
-						bind:value={config.name}
-						class="player-name-input"
-						placeholder="Name"
-					/>
-					<select
-						class="color-select"
-						style:background-color={config.color}
-						style:color="white"
-						value={config.color}
-						onchange={(e) => {
-							config.color = (e.target as HTMLSelectElement).value;
-							playerConfigs = [...playerConfigs];
-						}}
-					>
+		<div class="player-list">
+			{#each playerConfigs as config, i (i)}
+				<div class="player-config" style:--player-color={config.color}>
+					<div class="player-top-row">
+						<input
+							type="text"
+							class="player-name-input"
+							value={config.name}
+							oninput={(e) => updatePlayer(i, { name: (e.target as HTMLInputElement).value })}
+							placeholder="Name"
+						/>
+						{#if playerConfigs.length > 2}
+							<button class="remove-btn" onclick={() => removePlayer(i)} aria-label="Remove player">
+								&times;
+							</button>
+						{/if}
+					</div>
+
+					<div class="color-strip" role="radiogroup" aria-label="Player color">
 						{#each PLAYER_COLORS as color}
-							<option value={color.hex} style:background-color={color.hex}>
-								{color.name}
-							</option>
+							{@const takenByOther = playerConfigs.some((p, idx) => idx !== i && p.color === color.hex)}
+							<button
+								type="button"
+								class="color-chip"
+								class:selected={config.color === color.hex}
+								style:--chip-color={color.hex}
+								disabled={takenByOther}
+								title={takenByOther ? `${color.name} already used` : color.name}
+								onclick={() => updatePlayer(i, { color: color.hex })}
+							>
+								<span class="sr-only">{color.name}</span>
+							</button>
 						{/each}
-					</select>
-				</div>
-				<div class="player-config-type">
-					<button
-						class="type-btn flex items-center gap-2"
-						class:active={config.type === 'human'}
-						onclick={() => setPlayerType(i, 'human')}
-					>
-						<UserRound size={16} /> Player
-					</button>
-					<button
-						class="type-btn flex items-center gap-2"
-						class:active={config.type === 'bot'}
-						onclick={() => setPlayerType(i, 'bot')}
-					>
-						<Cpu size={16} /> Cpu
-					</button>
-					<button
-						class="type-btn flex items-center gap-2"
-						class:active={config.type === 'server'}
-						onclick={() => setPlayerType(i, 'server')}
-					>
-						<Server size={16} /> Server
-					</button>
-					{#if config.type === 'bot'}
-						<select
-							class="bot-select"
-							value={config.botStrategyId}
-							onchange={(e) => {
-								config.botStrategyId = (e.target as HTMLSelectElement).value;
-								playerConfigs = [...playerConfigs];
-							}}
+					</div>
+
+					<div class="player-config-type">
+						<button
+							type="button"
+							class="type-btn"
+							class:active={config.type === 'human'}
+							onclick={() => setPlayerType(i, 'human')}
 						>
+							<UserRound size={15} /> Player
+						</button>
+						<button
+							type="button"
+							class="type-btn"
+							class:active={config.type === 'bot'}
+							onclick={() => setPlayerType(i, 'bot')}
+						>
+							<Cpu size={15} /> Bot
+						</button>
+						<button
+							type="button"
+							class="type-btn"
+							class:active={config.type === 'server'}
+							onclick={() => setPlayerType(i, 'server')}
+						>
+							<Server size={15} /> Server
+						</button>
+					</div>
+
+					{#if config.type === 'bot'}
+						<div class="bot-pills" role="group" aria-label="Bot strategy">
 							{#each bots as bot}
-								<option value={bot.id}>{bot.name}</option>
+								<button
+									type="button"
+									class="bot-pill"
+									class:active={config.botStrategyId === bot.id}
+									onclick={() => updatePlayer(i, { botStrategyId: bot.id })}
+								>
+									{bot.name}
+								</button>
 							{/each}
-						</select>
+						</div>
 					{/if}
+
 					{#if config.type === 'server'}
 						<input
 							type="text"
 							class="server-url-input"
 							placeholder="http://localhost:3001"
 							value={config.serverUrl ?? 'http://localhost:3001'}
-							onchange={(e) => {
-								config.serverUrl = (e.target as HTMLInputElement).value;
-								playerConfigs = [...playerConfigs];
-							}}
+							onchange={(e) => updatePlayer(i, { serverUrl: (e.target as HTMLInputElement).value })}
 						/>
-					{/if}
-					{#if playerConfigs.length > 2}
-						<button class="remove-btn" onclick={() => removePlayer(i)} aria-label="Remove player">
-							&times;
-						</button>
-					{/if}
-				</div>
-				{#if config.type === 'server'}
-					<div class="server-config">
-						<div class="server-config-header">
+						<div class="server-config">
 							<button
 								class="server-config-toggle"
+								type="button"
 								onclick={() => {
 									showServerConfig.set(i, !(showServerConfig.get(i) ?? false));
 									showServerConfig = new Map(showServerConfig);
 								}}
 							>
-								<span class="server-config-label">Bot Settings</span>
+								<span>Bot Settings</span>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
-									width="12"
-									height="12"
+									width="14"
+									height="14"
 									viewBox="0 0 24 24"
 									fill="none"
 									stroke="currentColor"
@@ -241,311 +278,429 @@
 									<path d="m6 9 6 6 6-6" />
 								</svg>
 							</button>
+							{#if showServerConfig.get(i)}
+								<div class="server-config-body">
+									<ServerBotConfig
+										serverUrl={config.serverUrl ?? 'http://localhost:3001'}
+										botParams={config.serverBotParams}
+										onParamsChange={(params) => updatePlayer(i, { serverBotParams: params })}
+									/>
+								</div>
+							{/if}
 						</div>
-						{#if showServerConfig.get(i)}
-							<div class="server-config-body">
-								<ServerBotConfig
-									serverUrl={config.serverUrl ?? 'http://localhost:3001'}
-									botParams={config.serverBotParams}
-									onParamsChange={(params) => {
-										playerConfigs[i] = { ...playerConfigs[i], serverBotParams: params };
-										playerConfigs = [...playerConfigs];
-									}}
-								/>
-							</div>
-						{/if}
-					</div>
-				{/if}
-			</div>
-		{/each}
-	</div>
+					{/if}
+				</div>
+			{/each}
+		</div>
+	</section>
 
 	<button class="start-btn" onclick={handleStart}>Start Game</button>
 </div>
 
 <style>
-	.setup-panel {
-		width: 100%;
-		max-width: 480px;
-		margin: 0 auto;
-		padding: 1.25rem 1rem;
-		background: var(--panel-bg);
-		border-radius: 12px;
-		border: 1px solid var(--border-color);
+	.setup-root {
+		display: grid;
+		gap: 0.72rem;
 	}
 
-	.game-title {
-		font-size: 1.75rem;
-		font-weight: 800;
+	.hero-card,
+	.quick-card,
+	.native-card {
+		border-radius: 1.05rem;
+		background: color-mix(in srgb, var(--surface) 94%, transparent);
+		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+		box-shadow: var(--shadow-soft);
+	}
+
+	.hero-card {
+		padding: 0.9rem;
 		text-align: center;
-		color: var(--text-primary);
-		margin: 0 0 0.2rem;
-		letter-spacing: -0.02em;
 	}
 
-	.game-subtitle {
-		text-align: center;
-		color: var(--text-muted);
-		margin: 0 0 1.25rem;
-		font-size: 0.85rem;
-		font-style: italic;
+	.hero-title {
+		margin: 0;
+		font-family: var(--font-display);
+		font-size: clamp(2rem, 8vw, 2.6rem);
+		line-height: 0.86;
 	}
 
-	.quick-start h3 {
-		font-size: 0.8rem;
+	.hero-subtitle {
+		margin: 0.2rem 0 0;
+		font-size: 0.88rem;
 		font-weight: 600;
 		color: var(--text-muted);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-		margin: 0 0 0.6rem;
 	}
 
-	.quick-buttons {
+	.quick-card,
+	.native-card {
+		padding: 0.85rem;
+	}
+
+	.section-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		margin-bottom: 0.58rem;
+		gap: 0.5rem;
+	}
+
+	.section-head h3,
+	.card-title-row h3,
+	.players-header h3 {
+		margin: 0;
+		font-size: 1rem;
+		font-weight: 800;
+	}
+
+	.section-head span {
+		font-size: 0.76rem;
+		font-weight: 700;
+		color: var(--text-muted);
+	}
+
+	.quick-list {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
 		gap: 0.5rem;
 	}
 
 	.quick-btn {
-		display: flex;
-		flex-direction: column;
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
 		align-items: center;
-		gap: 0.3rem;
-		padding: 0.75rem 0.5rem;
-		border: 1px solid var(--border-color);
-		border-radius: 10px;
-		background: var(--surface-bg);
+		gap: 0.6rem;
+		padding: 0.68rem 0.72rem;
+		border-radius: 0.9rem;
+		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+		background: color-mix(in srgb, var(--surface-quiet) 95%, transparent);
 		cursor: pointer;
-		transition: all 0.15s ease;
-		-webkit-tap-highlight-color: transparent;
-		min-height: 44px;
+		text-align: left;
+		min-height: 56px;
+		transition:
+			transform 0.16s ease,
+			border-color 0.16s ease;
 	}
 
 	.quick-btn:hover {
-		border-color: var(--accent-color);
-		background: var(--hover-bg);
+		border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
 	}
 
 	.quick-btn:active {
-		transform: scale(0.97);
-		background: var(--hover-bg);
+		transform: scale(0.99);
 	}
 
 	.quick-icon {
-		font-size: 1.25rem;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.28rem;
+		color: var(--accent);
 	}
 
-	.quick-label {
-		font-size: 0.7rem;
-		font-weight: 500;
+	.quick-text {
+		display: grid;
+		gap: 0.05rem;
+	}
+
+	.quick-text strong {
+		font-size: 1rem;
+		font-weight: 800;
+	}
+
+	.quick-text small {
+		font-size: 0.8rem;
+		font-weight: 600;
 		color: var(--text-muted);
-		text-align: center;
 	}
 
 	.divider {
 		display: flex;
+		justify-content: center;
 		align-items: center;
-		gap: 1rem;
-		margin: 1.25rem 0;
+		font-size: 0.78rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
 		color: var(--text-muted);
-		font-size: 0.8rem;
+		position: relative;
 	}
 
 	.divider::before,
 	.divider::after {
 		content: '';
-		flex: 1;
 		height: 1px;
-		background: var(--border-color);
+		flex: 1;
+		max-width: 120px;
+		background: color-mix(in srgb, var(--line) 86%, transparent);
 	}
 
-	.config-section {
-		margin-bottom: 1rem;
+	.divider::before {
+		margin-right: 0.8rem;
 	}
 
-	.config-label {
+	.divider::after {
+		margin-left: 0.8rem;
+	}
+
+	.card-title-row {
 		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		font-weight: 500;
-		color: var(--text-primary);
-		font-size: 0.9rem;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.6rem;
+	}
+
+	.stepper {
+		display: inline-flex;
+		background: var(--surface-quiet);
+		border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+		border-radius: 999px;
+		overflow: hidden;
+	}
+
+	.stepper button {
+		width: 32px;
+		height: 32px;
+		border: none;
+		background: transparent;
+		font-size: 1.05rem;
+		font-weight: 800;
+		cursor: pointer;
+		color: var(--text-main);
+	}
+
+	.stepper button:disabled {
+		opacity: 0.38;
+		cursor: not-allowed;
+	}
+
+	.slider-wrap {
+		margin-top: 0.68rem;
+		position: relative;
+	}
+
+	.slider-wrap::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 50%;
+		width: var(--slider-progress, 0%);
+		height: 8px;
+		transform: translateY(-50%);
+		border-radius: 999px;
+		background: linear-gradient(90deg, var(--accent-warm), #ffb26d);
+		pointer-events: none;
 	}
 
 	.board-slider {
 		width: 100%;
-		height: 32px;
-		accent-color: var(--accent-color);
+		appearance: none;
+		height: 8px;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--line) 74%, white);
+		outline: none;
+	}
+
+	.board-slider::-webkit-slider-thumb {
+		appearance: none;
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		background: linear-gradient(145deg, #fff, #ffe9d6);
+		border: 2px solid var(--accent-warm);
+		box-shadow: 0 4px 10px rgb(255 126 84 / 0.32);
+	}
+
+	.board-slider::-moz-range-thumb {
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		background: linear-gradient(145deg, #fff, #ffe9d6);
+		border: 2px solid var(--accent-warm);
+		box-shadow: 0 4px 10px rgb(255 126 84 / 0.32);
 	}
 
 	.size-hint {
-		font-size: 0.75rem;
+		margin: 0.58rem 0 0;
+		font-size: 0.8rem;
+		font-weight: 600;
 		color: var(--text-muted);
-		font-weight: 400;
 	}
 
 	.players-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 0.6rem;
-	}
-
-	.players-header h3 {
-		font-size: 0.9rem;
-		font-weight: 600;
-		color: var(--text-primary);
-		margin: 0;
+		margin-bottom: 0.62rem;
+		gap: 0.6rem;
 	}
 
 	.add-player-btn {
-		font-size: 0.75rem;
-		padding: 0.35rem 0.75rem;
-		border-radius: 6px;
-		border: 1px dashed var(--border-color);
-		background: transparent;
+		border: 1px dashed color-mix(in srgb, var(--line-strong) 78%, transparent);
+		background: var(--surface-quiet);
 		color: var(--text-muted);
+		font-size: 0.78rem;
+		font-weight: 800;
+		padding: 0.42rem 0.82rem;
+		border-radius: 999px;
 		cursor: pointer;
-		transition: all 0.15s ease;
-		-webkit-tap-highlight-color: transparent;
-		min-height: 36px;
+		min-height: 40px;
 	}
 
-	.add-player-btn:hover {
-		border-color: var(--accent-color);
-		color: var(--accent-color);
+	.player-list {
+		display: grid;
+		gap: 0.62rem;
 	}
 
 	.player-config {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		padding: 0.65rem;
-		border: 1px solid var(--border-color);
-		border-radius: 10px;
-		margin-bottom: 0.5rem;
-		background: var(--surface-bg);
+		display: grid;
+		gap: 0.56rem;
+		padding: 0.7rem;
+		border-radius: 0.9rem;
+		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+		background:
+			linear-gradient(
+				130deg,
+				color-mix(in srgb, var(--player-color) 12%, transparent),
+				color-mix(in srgb, var(--surface-quiet) 96%, transparent)
+			),
+			var(--surface);
 	}
 
-	.player-config-main {
-		display: flex;
+	.player-top-row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
 		gap: 0.5rem;
 	}
 
-	.player-name-input {
-		flex: 1;
-		min-width: 0;
-		padding: 0.5rem 0.6rem;
-		border: 1px solid var(--border-color);
-		border-radius: 6px;
+	.player-name-input,
+	.server-url-input {
+		width: 100%;
+		padding: 0.56rem 0.68rem;
+		border-radius: 0.7rem;
+		border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
 		background: var(--input-bg);
-		color: var(--text-primary);
 		font-size: 16px;
-	}
-
-	.player-name-input:focus {
-		outline: 2px solid var(--accent-color);
-		outline-offset: -1px;
-	}
-
-	.color-select {
-		width: 90px;
-		padding: 0.5rem 0.4rem;
-		border: none;
-		border-radius: 6px;
-		font-size: 0.75rem;
 		font-weight: 600;
-		cursor: pointer;
-		min-height: 44px;
 	}
 
-	.player-config-type {
+	.remove-btn {
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		border: 1px solid color-mix(in srgb, var(--danger) 56%, transparent);
+		background: color-mix(in srgb, var(--danger) 14%, var(--surface));
+		color: var(--danger);
+		font-weight: 800;
+		cursor: pointer;
+	}
+
+	.color-strip {
 		display: flex;
-		gap: 0.4rem;
-		align-items: center;
+		gap: 0.32rem;
 		flex-wrap: wrap;
 	}
 
-	.type-btn {
-		padding: 0.4rem 0.65rem;
-		border: 1px solid var(--border-color);
-		border-radius: 6px;
-		background: transparent;
-		color: var(--text-muted);
-		font-size: 0.75rem;
-		font-weight: 500;
+	.color-chip {
+		width: 26px;
+		height: 26px;
+		border-radius: 50%;
+		border: 2px solid color-mix(in srgb, var(--line) 90%, transparent);
+		background: var(--chip-color);
 		cursor: pointer;
-		transition: all 0.15s ease;
-		-webkit-tap-highlight-color: transparent;
-		min-height: 36px;
+		position: relative;
+	}
+
+	.color-chip.selected {
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--chip-color) 28%, transparent);
+	}
+
+	.color-chip:disabled {
+		opacity: 0.25;
+		cursor: not-allowed;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		border: 0;
+	}
+
+	.player-config-type {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.36rem;
+	}
+
+	.type-btn {
+		display: inline-flex;
+		justify-content: center;
+		align-items: center;
+		gap: 0.28rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+		background: var(--surface-quiet);
+		padding: 0.44rem 0.48rem;
+		font-size: 0.78rem;
+		font-weight: 800;
+		color: var(--text-muted);
+		cursor: pointer;
+		min-height: 38px;
 	}
 
 	.type-btn.active {
-		background: var(--accent-color);
-		border-color: var(--accent-color);
-		color: white;
+		border-color: color-mix(in srgb, var(--accent) 58%, transparent);
+		color: var(--accent);
+		background: color-mix(in srgb, var(--accent) 13%, var(--surface));
 	}
 
-	.bot-select {
-		flex: 1;
-		min-width: 0;
-		padding: 0.4rem;
-		border: 1px solid var(--border-color);
-		border-radius: 6px;
-		background: var(--input-bg);
-		color: var(--text-primary);
-		font-size: 0.75rem;
-		min-height: 36px;
+	.bot-pills {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.34rem;
 	}
 
-	.server-url-input {
-		flex: 1;
-		min-width: 0;
-		padding: 0.4rem 0.5rem;
-		border: 1px solid var(--border-color);
-		border-radius: 6px;
-		background: var(--input-bg);
-		color: var(--text-primary);
-		font-size: 0.75rem;
-		min-height: 36px;
+	.bot-pill {
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+		background: var(--surface-quiet);
+		padding: 0.34rem 0.62rem;
+		font-size: 0.72rem;
+		font-weight: 800;
+		cursor: pointer;
+		color: var(--text-muted);
 	}
 
-	.server-url-input:focus {
-		outline: 2px solid var(--accent-color);
-		outline-offset: -1px;
+	.bot-pill.active {
+		border-color: color-mix(in srgb, var(--accent) 56%, transparent);
+		color: var(--accent);
+		background: color-mix(in srgb, var(--accent) 14%, var(--surface));
 	}
 
 	.server-config {
-		border-top: 1px solid var(--border-color);
-		padding-top: 0.4rem;
-	}
-
-	.server-config-header {
-		display: flex;
+		border-top: 1px dashed color-mix(in srgb, var(--line) 88%, transparent);
+		padding-top: 0.42rem;
 	}
 
 	.server-config-toggle {
 		display: flex;
-		align-items: center;
 		justify-content: space-between;
+		align-items: center;
 		width: 100%;
-		padding: 0.2rem 0;
 		border: none;
 		background: transparent;
-		cursor: pointer;
-		-webkit-tap-highlight-color: transparent;
-	}
-
-	.server-config-label {
-		font-size: 0.7rem;
-		font-weight: 600;
+		padding: 0.12rem 0;
+		font-size: 0.74rem;
+		font-weight: 800;
 		color: var(--text-muted);
 		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		letter-spacing: 0.06em;
+		cursor: pointer;
 	}
 
 	.chevron {
-		color: var(--text-muted);
 		transition: transform 0.2s ease;
 	}
 
@@ -554,85 +709,41 @@
 	}
 
 	.server-config-body {
-		margin-top: 0.3rem;
-	}
-
-	.remove-btn {
-		width: 36px;
-		height: 36px;
-		border-radius: 6px;
-		border: 1px solid var(--border-color);
-		background: transparent;
-		color: var(--text-muted);
-		font-size: 1.1rem;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: all 0.15s ease;
-		flex-shrink: 0;
-		-webkit-tap-highlight-color: transparent;
-	}
-
-	.remove-btn:hover {
-		background: #e74c3c;
-		border-color: #e74c3c;
-		color: white;
+		margin-top: 0.36rem;
 	}
 
 	.start-btn {
 		width: 100%;
-		padding: 0.85rem;
+		min-height: 52px;
 		border: none;
-		border-radius: 10px;
-		background: var(--accent-color);
+		border-radius: 1rem;
+		background: linear-gradient(130deg, var(--accent-warm), #ff9f63);
 		color: white;
 		font-size: 1rem;
-		font-weight: 700;
+		font-weight: 900;
+		letter-spacing: 0.03em;
 		cursor: pointer;
-		transition: all 0.15s ease;
-		letter-spacing: 0.02em;
-		-webkit-tap-highlight-color: transparent;
-		min-height: 48px;
-	}
-
-	.start-btn:hover {
-		filter: brightness(1.1);
+		box-shadow: 0 16px 30px rgb(255 126 84 / 0.34);
 	}
 
 	.start-btn:active {
-		transform: scale(0.98);
+		transform: scale(0.99);
 	}
 
-	@media (min-width: 640px) {
-		.setup-panel {
-			padding: 2rem;
-			border-radius: 16px;
+	@media (min-width: 720px) {
+		.setup-root {
+			gap: 0.85rem;
 		}
 
-		.game-title {
-			font-size: 2rem;
+		.quick-list {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
 
-		.game-subtitle {
-			margin-bottom: 1.5rem;
-			font-size: 0.9rem;
-		}
-
-		.quick-btn:hover {
-			transform: translateY(-1px);
-		}
-
-		.quick-btn:active {
-			transform: translateY(0);
-		}
-
-		.start-btn:hover {
-			transform: translateY(-1px);
-		}
-
-		.start-btn:active {
-			transform: translateY(0);
+		.quick-btn {
+			grid-template-columns: 1fr;
+			justify-items: center;
+			text-align: center;
+			gap: 0.3rem;
 		}
 	}
 </style>

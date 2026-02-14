@@ -6,8 +6,8 @@
 	let { game }: { game: GameState } = $props();
 
 	const bots = getAvailableBots();
-
 	let showBotAssign = $state(false);
+	let progress = $derived(game.totalSquares === 0 ? 0 : Math.round((game.capturedCount / game.totalSquares) * 100));
 </script>
 
 <div class="controls" role="region" aria-label="Game controls">
@@ -31,11 +31,7 @@
 		</button>
 
 		{#if game.phase === 'playing'}
-			<button
-				class="control-btn"
-				class:active={game.editMode}
-				onclick={() => game.toggleEditMode()}
-			>
+			<button class="control-btn" class:active={game.editMode} onclick={() => game.toggleEditMode()}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="16"
@@ -58,19 +54,11 @@
 
 	{#if game.phase === 'playing' || game.phase === 'finished'}
 		<div class="game-info">
-			<div class="info-row">
-				<span>Squares</span>
-				<span>{game.capturedCount} / {game.totalSquares}</span>
-			</div>
-			<div class="info-row">
-				<span>Moves</span>
-				<span>{game.moveHistory.length}</span>
-			</div>
-			<div class="progress-bar">
-				<div
-					class="progress-fill"
-					style:width="{(game.capturedCount / game.totalSquares) * 100}%"
-				></div>
+			<div class="info-row"><span>Squares</span><strong>{game.capturedCount} / {game.totalSquares}</strong></div>
+			<div class="info-row"><span>Moves</span><strong>{game.moveHistory.length}</strong></div>
+			<div class="info-row"><span>Progress</span><strong>{progress}%</strong></div>
+			<div class="progress-bar" aria-hidden="true">
+				<div class="progress-fill" style:width="{(game.capturedCount / game.totalSquares) * 100}%"></div>
 			</div>
 		</div>
 
@@ -97,6 +85,7 @@
 					<path d="m6 9 6 6 6-6" />
 				</svg>
 			</button>
+
 			{#if showBotAssign}
 				<div class="bot-assign-list">
 					{#each game.players as player, i (player.id)}
@@ -121,18 +110,18 @@
 								<option value="server">Server</option>
 							</select>
 						</div>
-					{#if player.type === 'server'}
-						<div class="server-inline-config">
-							<ServerBotConfig
-								serverUrl={player.serverUrl ?? 'http://localhost:3001'}
-								botParams={player.serverBotParams}
-								onParamsChange={(params) => {
-									game.assignBot(i, 'server', player.serverUrl, params);
-								}}
-								compact
-							/>
-						</div>
-					{/if}
+						{#if player.type === 'server'}
+							<div class="server-inline-config">
+								<ServerBotConfig
+									serverUrl={player.serverUrl ?? 'http://localhost:3001'}
+									botParams={player.serverBotParams}
+									onParamsChange={(params) => {
+										game.assignBot(i, 'server', player.serverUrl, params);
+									}}
+									compact
+								/>
+							</div>
+						{/if}
 					{/each}
 				</div>
 			{/if}
@@ -142,125 +131,112 @@
 
 <style>
 	.controls {
-		display: flex;
-		flex-direction: column;
-		gap: 0.6rem;
-		padding: 0.6rem;
-		background: var(--panel-bg);
-		border-radius: 10px;
-		border: 1px solid var(--border-color);
-		width: 100%;
+		display: grid;
+		gap: 0.58rem;
+		padding: 0.78rem;
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--surface) 95%, transparent);
+		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+		box-shadow: var(--shadow-soft);
 	}
 
 	.control-group {
-		display: flex;
-		gap: 0.5rem;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.45rem;
+	}
+
+	.control-btn,
+	.control-btn-placeholder {
+		min-height: 46px;
 	}
 
 	.control-btn {
-		display: flex;
-		align-items: center;
+		display: inline-flex;
 		justify-content: center;
+		align-items: center;
 		gap: 0.4rem;
-		flex: 1;
-		padding: 0.6rem 0.75rem;
-		border: 1px solid var(--border-color);
-		border-radius: 8px;
-		background: var(--surface-bg);
-		color: var(--text-primary);
-		font-size: 0.8rem;
-		font-weight: 500;
+		border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+		border-radius: 0.78rem;
+		background: color-mix(in srgb, var(--surface-quiet) 95%, transparent);
+		font-size: 0.88rem;
+		font-weight: 800;
 		cursor: pointer;
-		transition: all 0.15s ease;
-		-webkit-tap-highlight-color: transparent;
-		min-height: 44px;
-	}
-
-	.control-btn-placeholder {
-		flex: 1;
-		min-height: 44px;
-	}
-
-	.control-btn:hover {
-		background: var(--hover-bg);
-		border-color: var(--accent-color);
-	}
-
-	.control-btn:active {
-		transform: scale(0.97);
 	}
 
 	.control-btn.active {
-		background: var(--accent-color);
-		border-color: var(--accent-color);
-		color: white;
+		color: var(--accent);
+		background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+		border-color: color-mix(in srgb, var(--accent) 56%, transparent);
+	}
+
+	.control-btn:active {
+		transform: scale(0.99);
 	}
 
 	.game-info {
-		display: flex;
-		flex-direction: column;
-		gap: 0.3rem;
-		padding-top: 0.5rem;
-		border-top: 1px solid var(--border-color);
+		display: grid;
+		gap: 0.25rem;
+		padding: 0.54rem 0.62rem;
+		border-radius: 0.82rem;
+		background: color-mix(in srgb, var(--surface-quiet) 95%, transparent);
+		border: 1px dashed color-mix(in srgb, var(--line) 86%, transparent);
 	}
 
 	.info-row {
 		display: flex;
 		justify-content: space-between;
-		font-size: 0.8rem;
+		font-size: 0.82rem;
 		color: var(--text-muted);
 	}
 
-	.info-row span:last-child {
-		font-weight: 600;
-		color: var(--text-primary);
+	.info-row strong {
 		font-variant-numeric: tabular-nums;
+		color: var(--text-main);
 	}
 
 	.progress-bar {
-		height: 4px;
-		border-radius: 2px;
-		background: var(--border-color);
+		height: 6px;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--line) 80%, white);
 		overflow: hidden;
-		margin-top: 0.2rem;
 	}
 
 	.progress-fill {
 		height: 100%;
-		border-radius: 2px;
-		background: var(--accent-color);
+		border-radius: 999px;
+		background: linear-gradient(90deg, var(--accent), var(--accent-warm));
 		transition: width 0.3s ease;
 	}
 
 	.bot-assign {
-		border-top: 1px solid var(--border-color);
-		padding-top: 0.5rem;
+		padding-top: 0.52rem;
+		border-top: 1px dashed color-mix(in srgb, var(--line) 86%, transparent);
 	}
 
 	.bot-assign-toggle {
 		display: flex;
-		align-items: center;
 		justify-content: space-between;
+		align-items: center;
 		width: 100%;
-		padding: 0.3rem 0;
+		padding: 0;
 		border: none;
 		background: transparent;
 		cursor: pointer;
-		-webkit-tap-highlight-color: transparent;
 	}
 
 	.bot-assign-toggle h4 {
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--text-muted);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
 		margin: 0;
+		font-size: 0.76rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-muted);
 	}
 
 	.chevron {
-		color: var(--text-muted);
 		transition: transform 0.2s ease;
+		color: var(--text-muted);
 	}
 
 	.chevron.expanded {
@@ -268,71 +244,64 @@
 	}
 
 	.bot-assign-list {
-		display: flex;
-		flex-direction: column;
-		gap: 0.35rem;
-		margin-top: 0.4rem;
+		display: grid;
+		gap: 0.44rem;
+		margin-top: 0.46rem;
 	}
 
 	.bot-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
 		gap: 0.5rem;
+		align-items: center;
+		padding: 0.45rem;
+		border-radius: 0.72rem;
+		background: color-mix(in srgb, var(--player-color) 11%, var(--surface));
+		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
 	}
 
 	.bot-player-name {
 		font-size: 0.8rem;
+		font-weight: 800;
 		color: var(--player-color);
-		font-weight: 500;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.bot-assign-select {
-		padding: 0.35rem 0.4rem;
-		border: 1px solid var(--border-color);
-		border-radius: 6px;
-		background: var(--input-bg);
-		color: var(--text-primary);
-		font-size: 0.75rem;
+		appearance: none;
+		padding: 0.35rem 1.65rem 0.35rem 0.52rem;
 		min-height: 36px;
+		border-radius: 0.64rem;
+		border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+		background:
+			linear-gradient(45deg, transparent 50%, var(--text-muted) 50%) calc(100% - 12px) calc(50% - 2px) / 6px
+				6px no-repeat,
+			linear-gradient(135deg, var(--text-muted) 50%, transparent 50%) calc(100% - 8px) calc(50% - 2px) / 6px
+				6px no-repeat,
+			var(--surface-quiet);
+		font-size: 0.76rem;
+		font-weight: 700;
 	}
 
 	.server-inline-config {
-		display: flex;
-		flex-direction: column;
-		gap: 0.35rem;
-		padding: 0.4rem;
-		margin-top: -0.15rem;
-		border: 1px solid var(--border-color);
+		margin-top: -0.2rem;
+		padding: 0.44rem;
+		border-radius: 0 0 0.72rem 0.72rem;
+		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
 		border-top: none;
-		border-radius: 0 0 6px 6px;
-		background: var(--surface-bg);
+		background: color-mix(in srgb, var(--surface-quiet) 95%, transparent);
 	}
 
-	@media (min-width: 900px) {
-		.controls {
-			padding: 1rem;
-			border-radius: 12px;
-			min-width: 200px;
-			width: auto;
-		}
-
+	@media (min-width: 1020px) {
 		.control-group {
-			flex-direction: column;
+			grid-template-columns: 1fr;
 		}
 
 		.control-btn {
 			justify-content: flex-start;
-			font-size: 0.85rem;
-		}
-
-		.game-info {
-			padding-top: 0.75rem;
-			gap: 0.35rem;
-		}
-
-		.bot-assign {
-			padding-top: 0.75rem;
+			padding-inline: 0.75rem;
 		}
 	}
 </style>

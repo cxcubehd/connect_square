@@ -1,46 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Patrick+Hand&display=swap');
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
 @custom-variant dark (&:is(.dark *));
 
-@font-face {
-	font-family: 'Caveat';
-	font-style: normal;
-	font-weight: 400 700;
-	font-display: swap;
-	src: url('https://fonts.gstatic.com/s/caveat/v18/WnznHAc5bAfYB2QRah7pcpNvOx-pjcB9SIKjYBxPigs.woff2')
-		format('woff2');
-}
-
 :root {
-	--bg-color: #f2ece4;
-	--text-primary: #1e1e1e;
-	--text-muted: #7a7068;
-	--panel-bg: #ebe5db;
-	--surface-bg: #e4ddd3;
-	--input-bg: #f7f3ed;
-	--border-color: #cdc4b7;
-	--hover-bg: #ddd5c9;
-	--accent-color: #b35c2a;
-	--board-bg: #f5f0e8;
-	--dot-color: #9a9088;
-	--grid-line: #c8c0b4;
-	--font-display: 'Caveat', cursive;
+	--font-display: 'Patrick Hand', cursive;
+	--font-body: 'Manrope', 'Avenir Next', 'Segoe UI', sans-serif;
+
+	--bg-app: #f4f6fd;
+	--bg-layer-a: #dce9ff;
+	--bg-layer-b: #ffe5d9;
+	--bg-layer-c: #daf5ec;
+
+	--surface: #ffffff;
+	--surface-soft: #f1f5ff;
+	--surface-quiet: #f8faff;
+	--surface-inverse: #1f2740;
+
+	--text-main: #19223b;
+	--text-muted: #5f6b8b;
+	--text-inverse: #f4f8ff;
+
+	--line: #cfdbf4;
+	--line-strong: #9eb3e3;
+
+	--accent: #2f6cf6;
+	--accent-soft: #dce8ff;
+	--accent-warm: #ff7e54;
+	--danger: #f24e63;
+	--success: #29b673;
+
+	--shadow-soft: 0 8px 24px rgb(43 70 128 / 0.12);
+	--shadow-strong: 0 20px 44px rgb(28 45 90 / 0.16);
+
+	/* Shared aliases used by components */
+	--bg-color: var(--bg-app);
+	--panel-bg: var(--surface);
+	--surface-bg: var(--surface-soft);
+	--input-bg: var(--surface);
+	--text-primary: var(--text-main);
+	--text-soft: var(--text-muted);
+	--text-strong: var(--text-main);
+	--border-color: var(--line);
+	--border-strong: var(--line-strong);
+	--hover-bg: var(--surface-soft);
+	--accent-color: var(--accent);
+	--accent-alt: var(--accent-warm);
+	--accent-sun: #ffca57;
+	--board-bg: #ffffff;
+	--grid-line: #cbdaef;
+	--dot-color: #90a7d3;
 }
 
 .dark {
-	--bg-color: #161616;
-	--text-primary: #d8d4cf;
-	--text-muted: #787068;
-	--panel-bg: #1e1e1e;
-	--surface-bg: #262626;
-	--input-bg: #1c1c1c;
-	--border-color: #383430;
-	--hover-bg: #302c28;
-	--accent-color: #d97a42;
-	--board-bg: #1a1a18;
-	--dot-color: #5a5550;
-	--grid-line: #333028;
+	--bg-app: #0f1528;
+	--bg-layer-a: #1f305c;
+	--bg-layer-b: #4c2946;
+	--bg-layer-c: #214340;
+
+	--surface: #171f36;
+	--surface-soft: #1f2a45;
+	--surface-quiet: #121a30;
+	--surface-inverse: #f2f6ff;
+
+	--text-main: #edf3ff;
+	--text-muted: #afbbd9;
+	--text-inverse: #1c2440;
+
+	--line: #334263;
+	--line-strong: #4f6393;
+
+	--accent: #7ba3ff;
+	--accent-soft: #2a3b6a;
+	--accent-warm: #ff9a71;
+	--danger: #ff7a92;
+	--success: #54d89d;
+
+	--shadow-soft: 0 8px 24px rgb(0 0 0 / 0.3);
+	--shadow-strong: 0 20px 44px rgb(0 0 0 / 0.42);
+
+	--input-bg: #18223c;
+	--board-bg: #121a30;
+	--grid-line: #344a74;
+	--dot-color: #95abda;
 }
 
 *,
@@ -53,43 +96,69 @@ html {
 	height: 100%;
 	overflow-x: hidden;
 	-webkit-text-size-adjust: 100%;
+	background: var(--bg-app);
 }
 
 body {
 	margin: 0;
-	padding: 0;
 	min-height: 100%;
 	min-height: 100dvh;
-	background: var(--bg-color);
-	color: var(--text-primary);
-	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-	transition:
-		background-color 0.3s ease,
-		color 0.3s ease;
+	font-family: var(--font-body);
+	color: var(--text-main);
+	background:
+		radial-gradient(circle at 12% -8%, color-mix(in srgb, var(--bg-layer-a) 68%, transparent), transparent 42%),
+		radial-gradient(circle at 94% 12%, color-mix(in srgb, var(--bg-layer-b) 45%, transparent), transparent 38%),
+		radial-gradient(circle at 34% 110%, color-mix(in srgb, var(--bg-layer-c) 42%, transparent), transparent 44%),
+		var(--bg-app);
+	line-height: 1.35;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	overflow-x: hidden;
+	transition:
+		background 0.35s ease,
+		color 0.25s ease;
+}
+
+body::after {
+	content: '';
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	background: linear-gradient(rgb(255 255 255 / 0.04), rgb(255 255 255 / 0));
+	z-index: -1;
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+	color: inherit;
 }
 
 button {
-	font-family: inherit;
+	touch-action: manipulation;
 }
 
-select {
-	font-family: inherit;
+input,
+select,
+textarea {
+	accent-color: var(--accent);
 }
 
-input {
-	font-family: inherit;
+:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--accent) 64%, white);
+	outline-offset: 2px;
 }
 
 ::selection {
-	background: var(--accent-color);
+	background: color-mix(in srgb, var(--accent) 62%, white);
 	color: white;
 }
 
 @supports (padding: env(safe-area-inset-bottom)) {
 	body {
+		padding-top: env(safe-area-inset-top);
 		padding-left: env(safe-area-inset-left);
 		padding-right: env(safe-area-inset-right);
 		padding-bottom: env(safe-area-inset-bottom);

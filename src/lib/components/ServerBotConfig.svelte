@@ -22,7 +22,6 @@
 	async function fetchParams() {
 		if (fetching) return;
 		fetching = true;
-
 		const params = await fetchServerBotParams(serverUrl);
 		if (params) {
 			descriptors = params;
@@ -34,7 +33,6 @@
 				onParamsChange(defaults);
 			}
 		}
-
 		fetching = false;
 	}
 
@@ -67,9 +65,7 @@
 		<button class="fetch-btn" onclick={fetchParams} disabled={fetching}>
 			{fetching ? 'Fetching...' : 'Fetch from Server'}
 		</button>
-		<button class="json-btn" class:active={jsonMode} onclick={toggleJsonMode}>
-			JSON
-		</button>
+		<button class="json-btn" class:active={jsonMode} onclick={toggleJsonMode}>JSON</button>
 	</div>
 
 	{#if jsonMode}
@@ -89,9 +85,7 @@
 		<div class="param-list">
 			{#each descriptors as param}
 				<div class="param-row">
-					<span class="param-label" title={param.description}>
-						{param.label}
-					</span>
+					<span class="param-label" title={param.description}>{param.label}</span>
 					{#if param.param_type === 'integer' || param.param_type === 'number'}
 						<input
 							type="number"
@@ -107,16 +101,14 @@
 							type="checkbox"
 							class="param-checkbox"
 							checked={(botParams?.[param.name] ?? param.default_value) as boolean}
-							onchange={(e) =>
-								updateParam(param.name, (e.target as HTMLInputElement).checked)}
+							onchange={(e) => updateParam(param.name, (e.target as HTMLInputElement).checked)}
 						/>
 					{:else}
 						<input
 							type="text"
 							class="param-input"
 							value={String(botParams?.[param.name] ?? param.default_value ?? '')}
-							onchange={(e) =>
-								updateParam(param.name, (e.target as HTMLInputElement).value)}
+							onchange={(e) => updateParam(param.name, (e.target as HTMLInputElement).value)}
 						/>
 					{/if}
 				</div>
@@ -131,222 +123,156 @@
 
 <style>
 	.server-bot-config {
-		display: flex;
-		flex-direction: column;
+		display: grid;
 		gap: 0.4rem;
 	}
 
 	.actions {
-		display: flex;
-		gap: 0.35rem;
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: 0.34rem;
+	}
+
+	.fetch-btn,
+	.json-btn,
+	.apply-btn {
+		border-radius: 0.62rem;
+		font-size: 0.72rem;
+		font-weight: 800;
+		cursor: pointer;
 	}
 
 	.fetch-btn {
-		flex: 1;
-		padding: 0.35rem 0.5rem;
-		border: 1px solid var(--border-color);
-		border-radius: 6px;
-		background: var(--surface-bg);
-		color: var(--text-primary);
-		font-size: 0.7rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: all 0.15s ease;
-		min-height: 32px;
-	}
-
-	.compact .fetch-btn {
-		padding: 0.3rem 0.4rem;
-		border-radius: 4px;
-		font-size: 0.65rem;
-		min-height: 28px;
-	}
-
-	.fetch-btn:hover:not(:disabled) {
-		border-color: var(--accent-color);
-		color: var(--accent-color);
+		padding: 0.34rem 0.52rem;
+		border: 1px solid color-mix(in srgb, var(--line) 85%, transparent);
+		background: var(--surface-quiet);
 	}
 
 	.fetch-btn:disabled {
-		opacity: 0.5;
+		opacity: 0.52;
 		cursor: not-allowed;
 	}
 
 	.json-btn {
-		padding: 0.35rem 0.6rem;
-		border: 1px solid var(--border-color);
-		border-radius: 6px;
-		background: transparent;
+		padding: 0.34rem 0.6rem;
+		border: 1px solid color-mix(in srgb, var(--line) 85%, transparent);
+		background: var(--surface-quiet);
+		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 		color: var(--text-muted);
-		font-size: 0.7rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.15s ease;
-		min-height: 32px;
-		font-family: monospace;
-	}
-
-	.compact .json-btn {
-		padding: 0.3rem 0.5rem;
-		border-radius: 4px;
-		font-size: 0.65rem;
-		min-height: 28px;
 	}
 
 	.json-btn.active {
-		background: var(--accent-color);
-		border-color: var(--accent-color);
-		color: white;
+		border-color: color-mix(in srgb, var(--accent) 56%, transparent);
+		color: var(--accent);
+		background: color-mix(in srgb, var(--accent) 13%, var(--surface));
 	}
 
 	.json-edit {
-		display: flex;
-		flex-direction: column;
-		gap: 0.3rem;
-	}
-
-	.compact .json-edit {
-		gap: 0.25rem;
+		display: grid;
+		gap: 0.28rem;
 	}
 
 	.json-textarea {
 		width: 100%;
-		padding: 0.4rem;
-		border: 1px solid var(--border-color);
-		border-radius: 6px;
+		padding: 0.44rem;
+		border: 1px solid color-mix(in srgb, var(--line) 85%, transparent);
+		border-radius: 0.64rem;
 		background: var(--input-bg);
-		color: var(--text-primary);
-		font-size: 0.7rem;
-		font-family: monospace;
-		resize: vertical;
+		font-size: 0.72rem;
+		font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 		min-height: 80px;
-		box-sizing: border-box;
-	}
-
-	.compact .json-textarea {
-		padding: 0.35rem;
-		border-radius: 4px;
-		font-size: 0.65rem;
-		min-height: 60px;
-	}
-
-	.json-textarea:focus {
-		outline: 2px solid var(--accent-color);
-		outline-offset: -1px;
 	}
 
 	.json-error {
 		font-size: 0.7rem;
-		color: #e74c3c;
-		font-weight: 500;
-	}
-
-	.compact .json-error {
-		font-size: 0.65rem;
+		font-weight: 700;
+		color: var(--danger);
 	}
 
 	.apply-btn {
-		align-self: flex-end;
-		padding: 0.3rem 0.75rem;
-		border: 1px solid var(--accent-color);
-		border-radius: 6px;
-		background: var(--accent-color);
-		color: white;
-		font-size: 0.7rem;
-		font-weight: 600;
-		cursor: pointer;
-		min-height: 28px;
-	}
-
-	.compact .apply-btn {
-		padding: 0.25rem 0.6rem;
-		border-radius: 4px;
-		font-size: 0.65rem;
-		min-height: 24px;
+		justify-self: end;
+		padding: 0.28rem 0.68rem;
+		border: 1px solid color-mix(in srgb, var(--accent) 56%, transparent);
+		background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+		color: var(--accent);
 	}
 
 	.param-list {
-		display: flex;
-		flex-direction: column;
+		display: grid;
 		gap: 0.3rem;
-	}
-
-	.compact .param-list {
-		gap: 0.25rem;
 	}
 
 	.param-row {
 		display: flex;
-		align-items: center;
 		justify-content: space-between;
-		gap: 0.5rem;
-	}
-
-	.compact .param-row {
-		gap: 0.4rem;
+		align-items: center;
+		gap: 0.45rem;
+		padding: 0.32rem 0.42rem;
+		border-radius: 0.6rem;
+		background: color-mix(in srgb, var(--surface-quiet) 96%, transparent);
+		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
 	}
 
 	.param-label {
-		font-size: 0.7rem;
+		font-size: 0.72rem;
+		font-weight: 700;
 		color: var(--text-muted);
-		font-weight: 500;
-		cursor: help;
-		flex-shrink: 0;
-	}
-
-	.compact .param-label {
-		font-size: 0.65rem;
 	}
 
 	.param-input {
-		width: 80px;
+		width: 82px;
 		padding: 0.25rem 0.35rem;
-		border: 1px solid var(--border-color);
-		border-radius: 4px;
-		background: var(--input-bg);
-		color: var(--text-primary);
-		font-size: 0.7rem;
-		text-align: right;
 		min-height: 28px;
-	}
-
-	.compact .param-input {
-		width: 70px;
-		padding: 0.2rem 0.3rem;
-		font-size: 0.65rem;
-		min-height: 24px;
-	}
-
-	.param-input:focus {
-		outline: 2px solid var(--accent-color);
-		outline-offset: -1px;
+		text-align: right;
+		font-size: 0.72rem;
+		font-weight: 700;
+		border-radius: 0.5rem;
+		border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+		background: var(--input-bg);
 	}
 
 	.param-checkbox {
 		width: 16px;
 		height: 16px;
-		accent-color: var(--accent-color);
+		accent-color: var(--accent);
+	}
+
+	.param-summary,
+	.no-params-hint {
+		margin: 0;
+		font-size: 0.7rem;
+		font-weight: 700;
+		font-style: italic;
+		color: var(--text-muted);
+	}
+
+	.server-bot-config.compact {
+		gap: 0.3rem;
+	}
+
+	.compact .fetch-btn,
+	.compact .json-btn,
+	.compact .apply-btn {
+		font-size: 0.64rem;
+		min-height: 26px;
+		padding-block: 0.24rem;
+	}
+
+	.compact .param-label,
+	.compact .param-input,
+	.compact .json-textarea,
+	.compact .param-summary,
+	.compact .no-params-hint {
+		font-size: 0.64rem;
+	}
+
+	.compact .param-input {
+		width: 68px;
+		min-height: 24px;
 	}
 
 	.compact .param-checkbox {
 		width: 14px;
 		height: 14px;
-	}
-
-	.param-summary {
-		font-size: 0.7rem;
-		color: var(--text-muted);
-		font-style: italic;
-	}
-
-	.compact .param-summary {
-		font-size: 0.65rem;
-	}
-
-	.no-params-hint {
-		font-size: 0.7rem;
-		color: var(--text-muted);
-		margin: 0;
-		font-style: italic;
 	}
 </style>
