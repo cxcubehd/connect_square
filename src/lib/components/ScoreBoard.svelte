@@ -66,9 +66,8 @@
 <style>
 	.scoreboard {
 		display: grid;
-		grid-template-rows: auto minmax(0, 1fr) auto;
 		gap: 0.72rem;
-		height: 100%;
+		align-content: start;
 		padding: 0.86rem;
 		border-radius: 18px;
 		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
@@ -104,7 +103,7 @@
 	.score-list {
 		display: grid;
 		gap: 0.48rem;
-		overflow: auto;
+		align-content: start;
 	}
 
 	.score-row {
@@ -208,6 +207,19 @@
 		}
 		to {
 			opacity: 1;
+		}
+	}
+
+	@media (min-width: 960px) {
+		.scoreboard {
+			grid-template-rows: auto minmax(0, 1fr) auto;
+			height: 100%;
+			min-height: 0;
+		}
+
+		.score-list {
+			min-height: 0;
+			overflow: auto;
 		}
 	}
 </style>

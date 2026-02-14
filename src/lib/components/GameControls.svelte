@@ -109,9 +109,8 @@
 <style>
 	.controls {
 		display: grid;
-		grid-template-rows: auto auto minmax(0, 1fr);
 		gap: 0.7rem;
-		height: 100%;
+		align-content: start;
 		padding: 0.86rem;
 		border-radius: 18px;
 		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
@@ -203,7 +202,7 @@
 	.bot-assign {
 		display: grid;
 		gap: 0.45rem;
-		min-height: 0;
+		align-content: start;
 	}
 
 	.bot-assign-toggle {
@@ -223,7 +222,7 @@
 	.bot-assign-list {
 		display: grid;
 		gap: 0.5rem;
-		overflow: auto;
+		align-content: start;
 	}
 
 	.bot-row {
@@ -272,6 +271,23 @@
 	@media (max-width: 420px) {
 		.control-group {
 			grid-template-columns: 1fr;
+		}
+	}
+
+	@media (min-width: 960px) {
+		.controls {
+			grid-template-rows: auto auto minmax(0, 1fr);
+			height: 100%;
+			min-height: 0;
+		}
+
+		.bot-assign {
+			min-height: 0;
+		}
+
+		.bot-assign-list {
+			min-height: 0;
+			overflow: auto;
 		}
 	}
 </style>
