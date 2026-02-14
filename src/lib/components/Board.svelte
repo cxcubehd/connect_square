@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+
 	import { type GameState } from '$lib/game/state.svelte.js';
 	import { pointKey, parseLineKey, isDiagonal } from '$lib/game/logic.js';
 	import type { Point } from '$lib/game/types.js';
@@ -23,6 +25,17 @@
 
 	let isTouchDevice = $state(false);
 	let snapRadius = $derived(isTouchDevice ? TOUCH_SNAP_RADIUS : BASE_SNAP_RADIUS);
+
+	onMount(() => {
+		const coarsePointerQuery = window.matchMedia('(pointer: coarse)');
+		const updateTouchMode = () => {
+			isTouchDevice = coarsePointerQuery.matches || navigator.maxTouchPoints > 0;
+		};
+
+		updateTouchMode();
+		coarsePointerQuery.addEventListener('change', updateTouchMode);
+		return () => coarsePointerQuery.removeEventListener('change', updateTouchMode);
+	});
 
 	let svgWidth = $derived(game.boardSize * CELL_SIZE + PADDING * 2);
 	let svgHeight = $derived(game.boardSize * CELL_SIZE + PADDING * 2);
@@ -112,8 +125,6 @@
 	});
 
 	function handlePointerDown(e: PointerEvent) {
-		if (e.pointerType === 'touch') isTouchDevice = true;
-
 		if (game.phase !== 'playing' || game.editMode) return;
 		const player = game.currentPlayer;
 		if (!player || player.type !== 'human') return;
