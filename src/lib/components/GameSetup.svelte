@@ -88,7 +88,7 @@
 	}
 </script>
 
-<div class="setup-root">
+<div class="setup-root setup-panel">
 	<section class="hero-card">
 		<h2 class="hero-title">Pick Your Matchup</h2>
 		<p class="hero-subtitle">A game of territory and connections</p>

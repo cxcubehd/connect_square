@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { GameState } from '$lib/game/state.svelte.js';
 	import type { PlayerConfig } from '$lib/game/types.js';
 	import Board from '$lib/components/Board.svelte';
@@ -15,6 +16,17 @@
 	let activePanel: 'score' | 'controls' = $state('score');
 	let scorePanel: HTMLElement | undefined = $state(undefined);
 	let controlsPanel: HTMLElement | undefined = $state(undefined);
+	let isDesktop = $state(false);
+
+	onMount(() => {
+		const mq = window.matchMedia('(min-width: 1020px)');
+		const apply = () => {
+			isDesktop = mq.matches;
+		};
+		apply();
+		mq.addEventListener('change', apply);
+		return () => mq.removeEventListener('change', apply);
+	});
 
 	function handleStart(boardSize: number, players: PlayerConfig[]) {
 		game.startGame(boardSize, players);
@@ -80,40 +92,42 @@
 					{/if}
 				</div>
 
-				<div class="mobile-hub" role="navigation" aria-label="Game panels">
-					<div class="panel-switch">
-						<button
-							type="button"
-							class="switch-btn"
-							class:active={activePanel === 'score'}
-							onclick={() => focusPanel('score')}
-						>
-							Score
-						</button>
-						<button
-							type="button"
-							class="switch-btn"
-							class:active={activePanel === 'controls'}
-							onclick={() => focusPanel('controls')}
-						>
-							Actions
-						</button>
+				{#if isDesktop}
+					<div class="desktop-hub">
+						<ScoreBoard {game} />
+						<GameControls {game} />
 					</div>
-
-					<div class="panel-stack">
-						<div bind:this={scorePanel} class="panel-slot" class:focus={activePanel === 'score'}>
-							<ScoreBoard {game} />
+				{:else}
+					<div class="mobile-hub" role="navigation" aria-label="Game panels">
+						<div class="panel-switch">
+							<button
+								type="button"
+								class="switch-btn"
+								class:active={activePanel === 'score'}
+								onclick={() => focusPanel('score')}
+							>
+								Score
+							</button>
+							<button
+								type="button"
+								class="switch-btn"
+								class:active={activePanel === 'controls'}
+								onclick={() => focusPanel('controls')}
+							>
+								Actions
+							</button>
 						</div>
-						<div bind:this={controlsPanel} class="panel-slot" class:focus={activePanel === 'controls'}>
-							<GameControls {game} />
+
+						<div class="panel-stack">
+							<div bind:this={scorePanel} class="panel-slot" class:focus={activePanel === 'score'}>
+								<ScoreBoard {game} />
+							</div>
+							<div bind:this={controlsPanel} class="panel-slot" class:focus={activePanel === 'controls'}>
+								<GameControls {game} />
+							</div>
 						</div>
 					</div>
-				</div>
-
-				<div class="desktop-hub">
-					<ScoreBoard {game} />
-					<GameControls {game} />
-				</div>
+				{/if}
 			</section>
 		{/if}
 	</main>
@@ -326,7 +340,10 @@
 	}
 
 	.desktop-hub {
-		display: none;
+		display: grid;
+		gap: 0.72rem;
+		position: sticky;
+		top: 5.2rem;
 	}
 
 	@media (min-width: 760px) {
@@ -351,17 +368,6 @@
 		.play-stage {
 			grid-template-columns: minmax(0, 1.33fr) minmax(290px, 0.67fr);
 			align-items: start;
-		}
-
-		.mobile-hub {
-			display: none;
-		}
-
-		.desktop-hub {
-			display: grid;
-			gap: 0.72rem;
-			position: sticky;
-			top: 5.2rem;
 		}
 	}
 </style>
