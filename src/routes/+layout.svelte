@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { ModeWatcher } from 'mode-watcher';
 	import { initWasm } from '$lib/game/wasm-bot.js';
+	import '$lib/material-web.js';
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.ico';
 

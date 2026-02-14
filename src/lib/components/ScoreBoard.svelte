@@ -5,26 +5,34 @@
 </script>
 
 <div class="scoreboard" role="region" aria-label="Scoreboard">
-	<div class="player-scores">
+	<header class="score-header">
+		<p class="score-label">Match status</p>
+		<p class="score-progress">{game.capturedCount}/{game.totalSquares}</p>
+	</header>
+
+	<div class="score-list">
 		{#each game.scores as { player, score } (player.id)}
 			{@const isCurrent = game.phase === 'playing' && game.currentPlayer?.id === player.id}
 			<div
-				class="player-score"
+				class="score-row"
 				class:active={isCurrent}
 				class:eliminated={player.eliminated}
 				style:--player-color={player.color}
 			>
-				<div class="player-ident" class:thinking={isCurrent && game.isBotThinking}>
+				<div class="score-ident" class:thinking={isCurrent && game.isBotThinking}>
 					<span class="color-dot"></span>
-					<span class="player-name">{player.name}</span>
-					{#if player.type === 'bot'}
-						<span class="bot-badge">BOT</span>
-					{:else if player.type === 'server'}
-						<span class="bot-badge">SERVER</span>
-					{/if}
-					{#if player.eliminated}
-						<span class="out-badge">OUT</span>
-					{/if}
+					<div class="identity-copy">
+						<strong>{player.name}</strong>
+						<small>
+							{#if player.type === 'bot'}
+								Bot
+							{:else if player.type === 'server'}
+								Server
+							{:else}
+								Human
+							{/if}
+						</small>
+					</div>
 				</div>
 				<div class="score-value">{score}</div>
 			</div>
@@ -35,19 +43,21 @@
 		{#if game.phase === 'playing' && game.currentPlayer}
 			<div class="turn-indicator" style:--player-color={game.currentPlayer.color}>
 				{#if game.isBotThinking}
-					<span class="thinking-text">Thinking...</span>
-				{:else if game.currentPlayer.type === 'human'}
-					<span>{game.currentPlayer.name}'s turn</span>
+					<md-icon>psychology</md-icon>
+					<span>{game.currentPlayer.name} is thinking...</span>
 				{:else}
-					<span>{game.currentPlayer.name} is moving</span>
+					<md-icon>play_circle</md-icon>
+					<span>{game.currentPlayer.name}'s turn</span>
 				{/if}
 			</div>
 		{:else if game.phase === 'finished'}
 			<div class="game-over">
 				{#if game.winner}
-					<span class="winner-text" style:--winner={game.winner.color}>{game.winner.name} wins!</span>
+					<span class="winner" style:--winner-color={game.winner.color}
+						>{game.winner.name} wins</span
+					>
 				{:else}
-					<span class="winner-text">It's a tie!</span>
+					<span class="winner">Tie game</span>
 				{/if}
 			</div>
 		{/if}
@@ -57,44 +67,90 @@
 <style>
 	.scoreboard {
 		display: grid;
-		gap: 0.58rem;
-		padding: 0.78rem;
-		border-radius: 1rem;
+		grid-template-rows: auto minmax(0, 1fr) auto;
+		gap: 0.72rem;
+		height: 100%;
+		padding: 0.85rem;
+		border-radius: 18px;
+		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
 		background: color-mix(in srgb, var(--surface) 95%, transparent);
-		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
-		box-shadow: var(--shadow-soft);
 	}
 
-	.player-scores {
-		display: grid;
-		gap: 0.44rem;
-	}
-
-	.player-score {
+	.score-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		gap: 0.55rem;
-		padding: 0.52rem 0.6rem;
-		border-radius: 0.84rem;
-		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
-		background: color-mix(in srgb, var(--surface-quiet) 95%, transparent);
+		gap: 0.6rem;
 	}
 
-	.player-score.active {
+	.score-label,
+	.score-progress {
+		margin: 0;
+	}
+
+	.score-label {
+		font-size: 0.76rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--text-muted);
+	}
+
+	.score-progress {
+		font-variant-numeric: tabular-nums;
+		font-size: 0.9rem;
+		font-weight: 700;
+	}
+
+	.score-list {
+		display: grid;
+		gap: 0.48rem;
+		overflow: auto;
+	}
+
+	.score-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 0.7rem;
+		padding: 0.56rem 0.65rem;
+		border-radius: 14px;
+		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+		background: color-mix(in srgb, var(--surface-quiet) 96%, transparent);
+	}
+
+	.score-row.active {
 		border-color: color-mix(in srgb, var(--player-color) 56%, transparent);
-		background: color-mix(in srgb, var(--player-color) 12%, var(--surface));
+		background: color-mix(in srgb, var(--player-color) 16%, var(--surface));
 	}
 
-	.player-score.eliminated {
+	.score-row.eliminated {
 		opacity: 0.45;
 	}
 
-	.player-ident {
+	.score-ident {
 		display: flex;
 		align-items: center;
-		gap: 0.34rem;
+		gap: 0.45rem;
 		min-width: 0;
+	}
+
+	.identity-copy {
+		display: grid;
+		min-width: 0;
+	}
+
+	.identity-copy strong {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.identity-copy small {
+		font-size: 0.73rem;
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 	}
 
 	.color-dot {
@@ -102,85 +158,58 @@
 		height: 10px;
 		border-radius: 50%;
 		background: var(--player-color);
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--player-color) 24%, transparent);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--player-color) 24%, transparent);
 		flex-shrink: 0;
-	}
-
-	.player-name {
-		font-size: 0.84rem;
-		font-weight: 800;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.bot-badge,
-	.out-badge {
-		padding: 0.1rem 0.35rem;
-		border-radius: 999px;
-		font-size: 0.58rem;
-		font-weight: 900;
-		letter-spacing: 0.06em;
-		color: white;
-		flex-shrink: 0;
-	}
-
-	.bot-badge {
-		background: color-mix(in srgb, var(--player-color) 76%, #1f2942);
-	}
-
-	.out-badge {
-		background: var(--danger);
 	}
 
 	.score-value {
 		font-size: 1.35rem;
-		font-weight: 900;
+		font-weight: 700;
 		font-variant-numeric: tabular-nums;
 		color: var(--player-color);
-		min-width: 1.6rem;
-		text-align: right;
 	}
 
 	.status-section {
-		border-top: 1px dashed color-mix(in srgb, var(--line) 86%, transparent);
-		padding-top: 0.5rem;
-		min-height: 2.2rem;
+		min-height: 46px;
 	}
 
 	.turn-indicator {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.32rem;
+		padding: 0.4rem 0.74rem;
 		border-radius: 999px;
-		padding: 0.34rem 0.7rem;
-		text-align: center;
-		font-size: 0.8rem;
-		font-weight: 800;
+		font-size: 0.86rem;
+		font-weight: 700;
 		color: var(--player-color);
-		background: color-mix(in srgb, var(--player-color) 14%, transparent);
 		border: 1px solid color-mix(in srgb, var(--player-color) 42%, transparent);
+		background: color-mix(in srgb, var(--player-color) 13%, transparent);
 	}
 
-	.thinking {
-		animation: soft-pulse 0.8s ease-in-out infinite alternate;
-	}
-
-	.thinking-text {
-		animation: soft-pulse 0.8s ease-in-out infinite alternate;
+	.turn-indicator md-icon {
+		font-size: 1.1rem;
 	}
 
 	.game-over {
-		text-align: center;
+		display: inline-flex;
+		padding: 0.42rem 0.7rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-quiet) 90%, transparent);
+		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
 	}
 
-	.winner-text {
-		font-family: var(--font-display);
-		font-size: 1.3rem;
-		line-height: 0.9;
-		color: var(--winner, var(--text-main));
+	.winner {
+		font-weight: 700;
+		color: var(--winner-color, var(--text-main));
 	}
 
-	@keyframes soft-pulse {
+	.thinking {
+		animation: thinking 0.9s ease-in-out infinite alternate;
+	}
+
+	@keyframes thinking {
 		from {
-			opacity: 0.45;
+			opacity: 0.5;
 		}
 		to {
 			opacity: 1;

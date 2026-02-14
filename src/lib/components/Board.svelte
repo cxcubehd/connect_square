@@ -625,35 +625,35 @@
 
 <style>
 	.board-container {
-		display: flex;
-		justify-content: center;
-		align-items: center;
+		display: grid;
+		place-items: center;
 		width: 100%;
-		max-width: 700px;
-		margin: 0 auto;
-		padding: 0.2rem;
-		border-radius: 1rem;
-		background:
-			radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--accent-sun) 20%, transparent), transparent 52%),
-			linear-gradient(150deg, color-mix(in srgb, var(--surface) 95%, transparent), color-mix(in srgb, var(--surface-soft) 95%, transparent));
-		border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
-		box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.45);
+		height: 100%;
+		min-height: 0;
+		margin: 0;
+		padding: 0;
+		border: none;
+		background: transparent;
+		box-shadow: none;
 	}
 
 	.board-svg {
 		width: 100%;
-		height: auto;
-		border-radius: 0.85rem;
+		height: 100%;
+		max-width: 100%;
+		max-height: 100%;
+		aspect-ratio: 1;
+		border-radius: 14px;
 		user-select: none;
 		-webkit-user-select: none;
 		touch-action: none;
 		-webkit-touch-callout: none;
 		-webkit-tap-highlight-color: transparent;
-		filter: drop-shadow(0 10px 20px rgb(0 0 0 / 0.14));
+		filter: drop-shadow(0 8px 20px rgb(0 0 0 / 0.12));
 	}
 
 	.board-bg {
-		filter: url(#pencil-texture) drop-shadow(0 1px 0 rgb(255 255 255 / 0.25));
+		filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.15));
 	}
 
 	.dot {

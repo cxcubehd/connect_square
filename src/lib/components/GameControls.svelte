@@ -7,83 +7,54 @@
 
 	const bots = getAvailableBots();
 	let showBotAssign = $state(false);
-	let progress = $derived(game.totalSquares === 0 ? 0 : Math.round((game.capturedCount / game.totalSquares) * 100));
+	let progress = $derived(
+		game.totalSquares === 0 ? 0 : Math.round((game.capturedCount / game.totalSquares) * 100)
+	);
 </script>
 
 <div class="controls" role="region" aria-label="Game controls">
 	<div class="control-group">
-		<button class="control-btn" onclick={() => game.reset()}>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="16"
-				height="16"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-				<path d="M3 3v5h5" />
-			</svg>
+		<md-filled-tonal-button type="button" onclick={() => game.reset()}>
+			<md-icon slot="icon">restart_alt</md-icon>
 			New Game
-		</button>
+		</md-filled-tonal-button>
 
 		{#if game.phase === 'playing'}
-			<button class="control-btn" class:active={game.editMode} onclick={() => game.toggleEditMode()}>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="16"
-					height="16"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-				</svg>
+			<md-outlined-button
+				type="button"
+				class="edit-toggle"
+				class:active={game.editMode}
+				onclick={() => game.toggleEditMode()}
+			>
+				<md-icon slot="icon">edit</md-icon>
 				Edit Mode
-			</button>
+			</md-outlined-button>
 		{:else}
-			<div class="control-btn-placeholder"></div>
+			<div class="edit-placeholder" aria-hidden="true"></div>
 		{/if}
 	</div>
 
 	{#if game.phase === 'playing' || game.phase === 'finished'}
 		<div class="game-info">
-			<div class="info-row"><span>Squares</span><strong>{game.capturedCount} / {game.totalSquares}</strong></div>
+			<div class="info-row">
+				<span>Squares</span><strong>{game.capturedCount}/{game.totalSquares}</strong>
+			</div>
 			<div class="info-row"><span>Moves</span><strong>{game.moveHistory.length}</strong></div>
 			<div class="info-row"><span>Progress</span><strong>{progress}%</strong></div>
 			<div class="progress-bar" aria-hidden="true">
-				<div class="progress-fill" style:width="{(game.capturedCount / game.totalSquares) * 100}%"></div>
+				<div class="progress-fill" style:width="{progress}%"></div>
 			</div>
 		</div>
 
-		<div class="bot-assign">
+		<section class="bot-assign">
 			<button
+				type="button"
 				class="bot-assign-toggle"
 				onclick={() => (showBotAssign = !showBotAssign)}
 				aria-expanded={showBotAssign}
 			>
-				<h4>Assign Bots</h4>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="14"
-					height="14"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					class="chevron"
-					class:expanded={showBotAssign}
-				>
-					<path d="m6 9 6 6 6-6" />
-				</svg>
+				<span>Assign Bots</span>
+				<md-icon>{showBotAssign ? 'expand_less' : 'expand_more'}</md-icon>
 			</button>
 
 			{#if showBotAssign}
@@ -94,12 +65,12 @@
 							<select
 								class="bot-assign-select"
 								value={player.type === 'server' ? 'server' : (player.botStrategyId ?? '')}
-								onchange={(e) => {
-									const val = (e.target as HTMLSelectElement).value;
-									if (val === 'server') {
+								onchange={(event) => {
+									const value = (event.target as HTMLSelectElement).value;
+									if (value === 'server') {
 										game.assignBot(i, 'server');
 									} else {
-										game.assignBot(i, val || null);
+										game.assignBot(i, value || null);
 									}
 								}}
 							>
@@ -110,6 +81,7 @@
 								<option value="server">Server</option>
 							</select>
 						</div>
+
 						{#if player.type === 'server'}
 							<div class="server-inline-config">
 								<ServerBotConfig
@@ -125,72 +97,57 @@
 					{/each}
 				</div>
 			{/if}
-		</div>
+		</section>
 	{/if}
 </div>
 
 <style>
 	.controls {
 		display: grid;
-		gap: 0.58rem;
-		padding: 0.78rem;
-		border-radius: 1rem;
+		grid-template-rows: auto auto minmax(0, 1fr);
+		gap: 0.7rem;
+		height: 100%;
+		padding: 0.85rem;
+		border-radius: 18px;
+		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
 		background: color-mix(in srgb, var(--surface) 95%, transparent);
-		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
-		box-shadow: var(--shadow-soft);
 	}
 
 	.control-group {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 0.45rem;
+		gap: 0.5rem;
 	}
 
-	.control-btn,
-	.control-btn-placeholder {
-		min-height: 46px;
+	.edit-toggle.active {
+		--md-outlined-button-outline-color: color-mix(in srgb, var(--accent) 54%, transparent);
+		--md-outlined-button-label-text-color: var(--accent);
+		--md-outlined-button-hover-state-layer-color: var(--accent);
 	}
 
-	.control-btn {
-		display: inline-flex;
-		justify-content: center;
-		align-items: center;
-		gap: 0.4rem;
-		border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
-		border-radius: 0.78rem;
-		background: color-mix(in srgb, var(--surface-quiet) 95%, transparent);
-		font-size: 0.88rem;
-		font-weight: 800;
-		cursor: pointer;
-	}
-
-	.control-btn.active {
-		color: var(--accent);
-		background: color-mix(in srgb, var(--accent) 12%, var(--surface));
-		border-color: color-mix(in srgb, var(--accent) 56%, transparent);
-	}
-
-	.control-btn:active {
-		transform: scale(0.99);
+	.edit-placeholder {
+		height: 40px;
 	}
 
 	.game-info {
 		display: grid;
-		gap: 0.25rem;
-		padding: 0.54rem 0.62rem;
-		border-radius: 0.82rem;
-		background: color-mix(in srgb, var(--surface-quiet) 95%, transparent);
-		border: 1px dashed color-mix(in srgb, var(--line) 86%, transparent);
+		gap: 0.32rem;
+		padding: 0.58rem 0.68rem;
+		border-radius: 14px;
+		border: 1px dashed color-mix(in srgb, var(--line) 74%, transparent);
+		background: color-mix(in srgb, var(--surface-quiet) 94%, transparent);
 	}
 
 	.info-row {
 		display: flex;
 		justify-content: space-between;
-		font-size: 0.82rem;
+		font-size: 0.84rem;
 		color: var(--text-muted);
 	}
 
 	.info-row strong {
+		font-size: 0.88rem;
+		font-weight: 700;
 		font-variant-numeric: tabular-nums;
 		color: var(--text-main);
 	}
@@ -198,71 +155,57 @@
 	.progress-bar {
 		height: 6px;
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--line) 80%, white);
+		background: color-mix(in srgb, var(--line) 70%, transparent);
 		overflow: hidden;
 	}
 
 	.progress-fill {
 		height: 100%;
-		border-radius: 999px;
-		background: linear-gradient(90deg, var(--accent), var(--accent-warm));
-		transition: width 0.3s ease;
+		border-radius: inherit;
+		background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 45%, #fff));
+		transition: width 0.2s ease;
 	}
 
 	.bot-assign {
-		padding-top: 0.52rem;
-		border-top: 1px dashed color-mix(in srgb, var(--line) 86%, transparent);
+		display: grid;
+		gap: 0.45rem;
+		min-height: 0;
 	}
 
 	.bot-assign-toggle {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		width: 100%;
-		padding: 0;
-		border: none;
-		background: transparent;
+		gap: 0.5rem;
+		padding: 0.5rem 0.65rem;
+		border-radius: 12px;
+		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+		background: color-mix(in srgb, var(--surface-quiet) 95%, transparent);
+		font-size: 0.84rem;
+		font-weight: 600;
 		cursor: pointer;
-	}
-
-	.bot-assign-toggle h4 {
-		margin: 0;
-		font-size: 0.76rem;
-		font-weight: 800;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: var(--text-muted);
-	}
-
-	.chevron {
-		transition: transform 0.2s ease;
-		color: var(--text-muted);
-	}
-
-	.chevron.expanded {
-		transform: rotate(180deg);
 	}
 
 	.bot-assign-list {
 		display: grid;
-		gap: 0.44rem;
-		margin-top: 0.46rem;
+		gap: 0.5rem;
+		overflow: auto;
 	}
 
 	.bot-row {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;
-		gap: 0.5rem;
+		gap: 0.44rem;
 		align-items: center;
-		padding: 0.45rem;
-		border-radius: 0.72rem;
-		background: color-mix(in srgb, var(--player-color) 11%, var(--surface));
-		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
+		padding: 0.52rem;
+		border-radius: 12px;
+		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+		background: color-mix(in srgb, var(--player-color) 12%, var(--surface));
 	}
 
 	.bot-player-name {
-		font-size: 0.8rem;
-		font-weight: 800;
+		font-size: 0.84rem;
+		font-weight: 700;
 		color: var(--player-color);
 		white-space: nowrap;
 		overflow: hidden;
@@ -271,37 +214,30 @@
 
 	.bot-assign-select {
 		appearance: none;
-		padding: 0.35rem 1.65rem 0.35rem 0.52rem;
-		min-height: 36px;
-		border-radius: 0.64rem;
-		border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+		min-height: 34px;
+		padding: 0.35rem 1.8rem 0.35rem 0.55rem;
+		border-radius: 9px;
+		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
 		background:
-			linear-gradient(45deg, transparent 50%, var(--text-muted) 50%) calc(100% - 12px) calc(50% - 2px) / 6px
-				6px no-repeat,
-			linear-gradient(135deg, var(--text-muted) 50%, transparent 50%) calc(100% - 8px) calc(50% - 2px) / 6px
-				6px no-repeat,
-			var(--surface-quiet);
-		font-size: 0.76rem;
-		font-weight: 700;
+			linear-gradient(45deg, transparent 50%, var(--text-muted) 50%) calc(100% - 13px) 48% / 6px 6px
+				no-repeat,
+			linear-gradient(135deg, var(--text-muted) 50%, transparent 50%) calc(100% - 9px) 48% / 6px 6px
+				no-repeat,
+			color-mix(in srgb, var(--surface) 95%, transparent);
+		font-size: 0.78rem;
+		font-weight: 600;
 	}
 
 	.server-inline-config {
-		margin-top: -0.2rem;
-		padding: 0.44rem;
-		border-radius: 0 0 0.72rem 0.72rem;
-		border: 1px solid color-mix(in srgb, var(--line) 84%, transparent);
-		border-top: none;
+		padding: 0.5rem;
+		border-radius: 12px;
+		border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
 		background: color-mix(in srgb, var(--surface-quiet) 95%, transparent);
 	}
 
-	@media (min-width: 1020px) {
+	@media (max-width: 420px) {
 		.control-group {
 			grid-template-columns: 1fr;
-		}
-
-		.control-btn {
-			justify-content: flex-start;
-			padding-inline: 0.75rem;
 		}
 	}
 </style>

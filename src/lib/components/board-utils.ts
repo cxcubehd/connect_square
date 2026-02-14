@@ -1,11 +1,11 @@
 import type { Point } from '$lib/game/types.js';
 
-export const PADDING = 40;
-export const CELL_SIZE = 60;
-export const BASE_SNAP_RADIUS = 26;
-export const TOUCH_SNAP_RADIUS = 34;
-export const DEAD_ZONE_RADIUS = 8;
-export const DIRECTIONAL_OVERSHOOT_RADIUS = 260;
+export const PADDING = 20;
+export const CELL_SIZE = 52;
+export const BASE_SNAP_RADIUS = 22;
+export const TOUCH_SNAP_RADIUS = 30;
+export const DEAD_ZONE_RADIUS = 7;
+export const DIRECTIONAL_OVERSHOOT_RADIUS = 220;
 export const TURN_HINT_DURATION_MS = 600;
 
 export function dotX(col: number): number {
